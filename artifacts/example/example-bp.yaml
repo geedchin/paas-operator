@@ -1,0 +1,18 @@
+apiVersion: stable.k6s.com/v1alpha1
+kind: Blueprint
+metadata:
+  name: example-bp
+spec:
+  host:
+    ip: 192.168.19.100
+    username: root
+    password: 123456
+  app:
+    scripts:
+      install: http://192.168.19.101/install.sh
+      start: http://192.168.19.101/start.sh
+      stop: http://192.168.19.101/stop.sh
+      restart: http://192.168.19.101/restart.sh
+      uninstall: http://192.168.19.101/uninstall.sh
+    status: Installing
+
