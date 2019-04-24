@@ -1,4 +1,4 @@
-apiVersion: stable.k6s.com/v1alpha1
+apiVersion: k6s.com/v1alpha1
 kind: Blueprint
 metadata:
   name: example-bp
