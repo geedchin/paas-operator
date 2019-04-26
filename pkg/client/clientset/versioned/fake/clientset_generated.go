@@ -9,8 +9,8 @@ package fake
 
 import (
 	clientset "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned"
-	k6sv1alpha1 "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned/typed/k6s/v1alpha1"
-	fakek6sv1alpha1 "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned/typed/k6s/v1alpha1/fake"
+	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
+	fakeblueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned/typed/blueprintcontroller/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -60,12 +60,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// K6sV1alpha1 retrieves the K6sV1alpha1Client
-func (c *Clientset) K6sV1alpha1() k6sv1alpha1.K6sV1alpha1Interface {
-	return &fakek6sv1alpha1.FakeK6sV1alpha1{Fake: &c.Fake}
+// BlueprintcontrollerV1alpha1 retrieves the BlueprintcontrollerV1alpha1Client
+func (c *Clientset) BlueprintcontrollerV1alpha1() blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Interface {
+	return &fakeblueprintcontrollerv1alpha1.FakeBlueprintcontrollerV1alpha1{Fake: &c.Fake}
 }
 
-// K6s retrieves the K6sV1alpha1Client
-func (c *Clientset) K6s() k6sv1alpha1.K6sV1alpha1Interface {
-	return &fakek6sv1alpha1.FakeK6sV1alpha1{Fake: &c.Fake}
+// Blueprintcontroller retrieves the BlueprintcontrollerV1alpha1Client
+func (c *Clientset) Blueprintcontroller() blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Interface {
+	return &fakeblueprintcontrollerv1alpha1.FakeBlueprintcontrollerV1alpha1{Fake: &c.Fake}
 }

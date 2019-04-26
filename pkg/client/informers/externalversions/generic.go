@@ -10,7 +10,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1alpha1 "github.com/farmer-hutao/k6s/pkg/apis/k6s/v1alpha1"
+	v1alpha1 "github.com/farmer-hutao/k6s/pkg/apis/blueprintcontroller/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -41,9 +41,9 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=k6s.k8s.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("blueprints"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.K6s().V1alpha1().Blueprints().Informer()}, nil
+	// Group=blueprintcontroller.k8s.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("databases"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Blueprintcontroller().V1alpha1().Databases().Informer()}, nil
 
 	}
 

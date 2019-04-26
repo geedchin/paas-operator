@@ -8,7 +8,7 @@ Copyright The K6s Authors.
 package scheme
 
 import (
-	k6sv1alpha1 "github.com/farmer-hutao/k6s/pkg/apis/k6s/v1alpha1"
+	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/apis/blueprintcontroller/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -20,7 +20,7 @@ var Scheme = runtime.NewScheme()
 var Codecs = serializer.NewCodecFactory(Scheme)
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
-	k6sv1alpha1.AddToScheme,
+	blueprintcontrollerv1alpha1.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

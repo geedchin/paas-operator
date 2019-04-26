@@ -8,7 +8,7 @@ Copyright The K6s Authors.
 package versioned
 
 import (
-	k6sv1alpha1 "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned/typed/k6s/v1alpha1"
+	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -16,27 +16,27 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	K6sV1alpha1() k6sv1alpha1.K6sV1alpha1Interface
+	BlueprintcontrollerV1alpha1() blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	K6s() k6sv1alpha1.K6sV1alpha1Interface
+	Blueprintcontroller() blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	k6sV1alpha1 *k6sv1alpha1.K6sV1alpha1Client
+	blueprintcontrollerV1alpha1 *blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Client
 }
 
-// K6sV1alpha1 retrieves the K6sV1alpha1Client
-func (c *Clientset) K6sV1alpha1() k6sv1alpha1.K6sV1alpha1Interface {
-	return c.k6sV1alpha1
+// BlueprintcontrollerV1alpha1 retrieves the BlueprintcontrollerV1alpha1Client
+func (c *Clientset) BlueprintcontrollerV1alpha1() blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Interface {
+	return c.blueprintcontrollerV1alpha1
 }
 
-// Deprecated: K6s retrieves the default version of K6sClient.
+// Deprecated: Blueprintcontroller retrieves the default version of BlueprintcontrollerClient.
 // Please explicitly pick a version.
-func (c *Clientset) K6s() k6sv1alpha1.K6sV1alpha1Interface {
-	return c.k6sV1alpha1
+func (c *Clientset) Blueprintcontroller() blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Interface {
+	return c.blueprintcontrollerV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -55,7 +55,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.k6sV1alpha1, err = k6sv1alpha1.NewForConfig(&configShallowCopy)
+	cs.blueprintcontrollerV1alpha1, err = blueprintcontrollerv1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.k6sV1alpha1 = k6sv1alpha1.NewForConfigOrDie(c)
+	cs.blueprintcontrollerV1alpha1 = blueprintcontrollerv1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -80,7 +80,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.k6sV1alpha1 = k6sv1alpha1.New(c)
+	cs.blueprintcontrollerV1alpha1 = blueprintcontrollerv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

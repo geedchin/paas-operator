@@ -13,8 +13,8 @@ import (
 	time "time"
 
 	versioned "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned"
+	blueprintcontroller "github.com/farmer-hutao/k6s/pkg/client/informers/externalversions/blueprintcontroller"
 	internalinterfaces "github.com/farmer-hutao/k6s/pkg/client/informers/externalversions/internalinterfaces"
-	k6s "github.com/farmer-hutao/k6s/pkg/client/informers/externalversions/k6s"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -161,9 +161,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	K6s() k6s.Interface
+	Blueprintcontroller() blueprintcontroller.Interface
 }
 
-func (f *sharedInformerFactory) K6s() k6s.Interface {
-	return k6s.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Blueprintcontroller() blueprintcontroller.Interface {
+	return blueprintcontroller.New(f, f.namespace, f.tweakListOptions)
 }
