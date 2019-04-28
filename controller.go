@@ -14,9 +14,9 @@ import (
 	"k8s.io/klog"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
+	blueprintv1alpha1 "github.com/farmer-hutao/k6s/pkg/apis/blueprintcontroller/v1alpha1"
 	clientset "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned"
 	blueprintscheme "github.com/farmer-hutao/k6s/pkg/client/clientset/versioned/scheme"
 	informers "github.com/farmer-hutao/k6s/pkg/client/informers/externalversions/blueprintcontroller/v1alpha1"
@@ -205,14 +205,8 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	appName := database.Spec.App
-	if appName == "" {
-		// We choose to absorb the error here as the worker would requeue the
-		// resource otherwise. Instead, the next time the resource is updated
-		// the resource will be queued again.
-		runtime.HandleError(fmt.Errorf("%s: appName must be specified", key))
-		return nil
-	}
+	ip := database.Spec.Host.Ip
+	fmt.Println("Ip: ", ip)
 
 	// Get the deployment with the name specified in Database.spec
 
@@ -221,29 +215,24 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Finally, we update the status block of the Database resource to reflect the
 	// current state of the world
-	//err = c.updateDatabaseStatus(database, deployment)
-	//if err != nil {
-	//	return err
-	//}
+	err = c.updateDatabaseStatus(database, "not-installed")
+	if err != nil {
+		return err
+	}
 
 	c.recorder.Event(database, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
 
-//
-//func (c *Controller) updateDatabaseStatus(database *blueprintv1alpha1.Database, deployment *appsv1.Deployment) error {
-//	// NEVER modify objects from the store. It's a read-only, local cache.
-//	// You can use DeepCopy() to make a deep copy of original object and modify this copy
-//	// Or create a copy manually for better performance
-//	databaseCopy := database.DeepCopy()
-//	databaseCopy.Status.AvailableReplicas = deployment.Status.AvailableReplicas
-//	// If the CustomResourceSubresources feature gate is not enabled,
-//	// we must use Update instead of UpdateStatus to update the Status block of the Database resource.
-//	// UpdateStatus will not allow changes to the Spec of the resource,
-//	// which is ideal for ensuring nothing other than resource status has been updated.
-//	_, err := c.blueprintclientset.SamplecontrollerV1alpha1().Databases(database.Namespace).Update(databaseCopy)
-//	return err
-//}
+func (c *Controller) updateDatabaseStatus(database *blueprintv1alpha1.Database, install string) error {
+	// NEVER modify objects from the store. It's a read-only, local cache.
+	// You can use DeepCopy() to make a deep copy of original object and modify this copy
+	// Or create a copy manually for better performance
+	databaseCopy := database.DeepCopy()
+	databaseCopy.Status.Install = install
+	_, err := c.blueprintclientset.BlueprintcontrollerV1alpha1().Databases(database.Namespace).Update(databaseCopy)
+	return err
+}
 
 // enqueueDatabase takes a Database resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
@@ -256,44 +245,4 @@ func (c *Controller) enqueueDatabase(obj interface{}) {
 		return
 	}
 	c.workqueue.AddRateLimited(key)
-}
-
-// handleObject will take any resource implementing metav1.Object and attempt
-// to find the Database resource that 'owns' it. It does this by looking at the
-// objects metadata.ownerReferences field for an appropriate OwnerReference.
-// It then enqueues that Database resource to be processed. If the object does not
-// have an appropriate OwnerReference, it will simply be skipped.
-func (c *Controller) handleObject(obj interface{}) {
-	var object metav1.Object
-	var ok bool
-	if object, ok = obj.(metav1.Object); !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("error decoding object, invalid type"))
-			return
-		}
-		object, ok = tombstone.Obj.(metav1.Object)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
-			return
-		}
-		klog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
-	}
-	klog.V(4).Infof("Processing object: %s", object.GetName())
-	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a Database, we should not do anything more
-		// with it.
-		if ownerRef.Kind != "Database" {
-			return
-		}
-
-		database, err := c.databasesLister.Databases(object.GetNamespace()).Get(ownerRef.Name)
-		if err != nil {
-			klog.V(4).Infof("ignoring orphaned object '%s' of database '%s'", object.GetSelfLink(), ownerRef.Name)
-			return
-		}
-
-		c.enqueueDatabase(database)
-		return
-	}
 }

@@ -18,13 +18,31 @@ type Database struct {
 
 // DatabaseSpec is the spec for a Database resource
 type DatabaseSpec struct {
-	Host string `json:"host"`
-	App  string `json:"app"`
+	Host HostField `json:"host"`
+	App  AppField  `json:"app"`
+}
+
+type HostField struct {
+	Ip       string `json:"ip"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type AppField struct {
+	Script ScriptField `json:"script"`
+}
+
+type ScriptField struct {
+	Install   string `json:"install"`
+	Start     string `json:"start"`
+	Stop      string `json:"stop"`
+	Restart   string `json:"restart"`
+	Uninstall string `json:"uninstall"`
 }
 
 // DatabaseStatus is the status for a Database resource
 type DatabaseStatus struct {
-	AvailableReplicas int32 `json:"availableReplicas"`
+	Install string `json:"install"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

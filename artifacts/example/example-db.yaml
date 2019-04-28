@@ -1,4 +1,4 @@
-apiVersion: blueprintcontroller.blueprintcontroller.io/v1alpha1
+apiVersion: blueprintcontroller.k8s.io/v1alpha1
 kind: Database
 metadata:
   name: example-db
@@ -8,11 +8,11 @@ spec:
     username: root
     password: 123456
   app:
-    scripts:
+    script:
       install: http://192.168.19.101/install.sh
       start: http://192.168.19.101/start.sh
       stop: http://192.168.19.101/stop.sh
       restart: http://192.168.19.101/restart.sh
       uninstall: http://192.168.19.101/uninstall.sh
-    status: Installing
-
+#status:
+#  install: not-installed
