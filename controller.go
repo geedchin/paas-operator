@@ -164,6 +164,7 @@ func (c *Controller) processNextWorkItem() bool {
 		if err := c.syncHandler(key); err != nil {
 			// Put the item back on the workqueue to handle any transient errors.
 			c.workqueue.AddRateLimited(key)
+			fmt.Println("Err: ", key)
 			return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
 		}
 		// Finally, if no error occurs we Forget this item so it does not
@@ -245,4 +246,6 @@ func (c *Controller) enqueueDatabase(obj interface{}) {
 		return
 	}
 	c.workqueue.AddRateLimited(key)
+
+	fmt.Println("enqueue: ", key)
 }
