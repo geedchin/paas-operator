@@ -9,10 +9,10 @@ package externalversions
 
 import (
 	"fmt"
-	"github.com/farmer-hutao/k6s/pkg/controller"
 
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/cache"
+	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // GenericInformer is type of SharedIndexInformer which will locate and delegate to other
@@ -39,10 +39,10 @@ func (f *genericInformer) Lister() cache.GenericLister {
 
 // ForResource gives generic access to a shared informer of the matching type
 // TODO extend this to unknown resources with a client pool
-func (f *controller.sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
+func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=blueprintcontroller.k8s.io, Version=v1alpha1
-	case controller.SchemeGroupVersion.WithResource("databases"):
+	case v1alpha1.SchemeGroupVersion.WithResource("databases"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Blueprintcontroller().V1alpha1().Databases().Informer()}, nil
 
 	}

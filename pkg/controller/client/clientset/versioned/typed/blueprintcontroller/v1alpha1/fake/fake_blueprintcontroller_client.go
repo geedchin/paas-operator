@@ -8,17 +8,17 @@ Copyright The K6s Authors.
 package fake
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/testing"
+	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
+	rest "k8s.io/client-go/rest"
+	testing "k8s.io/client-go/testing"
 )
 
 type FakeBlueprintcontrollerV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeBlueprintcontrollerV1alpha1) Databases(namespace string) controller.DatabaseInterface {
-	return &controller.FakeDatabases{c, namespace}
+func (c *FakeBlueprintcontrollerV1alpha1) Databases(namespace string) v1alpha1.DatabaseInterface {
+	return &FakeDatabases{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

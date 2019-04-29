@@ -69,6 +69,30 @@
 			"Rev": "24195e6d38b06020d7a92c7b11960cf2e7cad2f2"
 		},
 		{
+			"ImportPath": "github.com/gin-contrib/sse",
+			"Rev": "5545eab6dad3bbbd6c5ae9186383c2a9d23c0dae"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin",
+			"Comment": "v1.3.0-153-g202f8fc",
+			"Rev": "202f8fc58af47ab5c8e834662ee7fc46deacc37d"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin/binding",
+			"Comment": "v1.3.0-153-g202f8fc",
+			"Rev": "202f8fc58af47ab5c8e834662ee7fc46deacc37d"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin/internal/json",
+			"Comment": "v1.3.0-153-g202f8fc",
+			"Rev": "202f8fc58af47ab5c8e834662ee7fc46deacc37d"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin/render",
+			"Comment": "v1.3.0-153-g202f8fc",
+			"Rev": "202f8fc58af47ab5c8e834662ee7fc46deacc37d"
+		},
+		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
 			"Comment": "v1.1.1-34-g07eab6a8",
 			"Rev": "07eab6a8298cf32fac45cceaac59424f98421bbc"
@@ -77,6 +101,10 @@
 			"ImportPath": "github.com/gogo/protobuf/sortkeys",
 			"Comment": "v1.1.1-34-g07eab6a8",
 			"Rev": "07eab6a8298cf32fac45cceaac59424f98421bbc"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 		},
 		{
 			"ImportPath": "github.com/golang/groupcache/lru",
@@ -329,6 +357,11 @@
 			"Rev": "bab58d77464aa9cf4e84200c3276da0831fe0c03"
 		},
 		{
+			"ImportPath": "github.com/mattn/go-isatty",
+			"Comment": "v0.0.7-2-gc1975dc",
+			"Rev": "c1975dc15c1d481e8da23f6ed313bb071136b98f"
+		},
+		{
 			"ImportPath": "github.com/microcosm-cc/bluemonday",
 			"Comment": "v1.0.1",
 			"Rev": "82c7118e8ccf7403d4860175d97bb635e8e28239"
@@ -361,6 +394,11 @@
 			"ImportPath": "github.com/spf13/pflag",
 			"Comment": "v1.0.3-8-g24fa697",
 			"Rev": "24fa6976df40757dce6aea913e7b81ade90530e1"
+		},
+		{
+			"ImportPath": "github.com/ugorji/go/codec",
+			"Comment": "v1.1.4-15-g1d7ab5c",
+			"Rev": "1d7ab5c50b36701116070c4c612259f93c262367"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/acme",
@@ -449,6 +487,11 @@
 		{
 			"ImportPath": "golang.org/x/time/rate",
 			"Rev": "85acf8d2951cb2a3bde7632f9ff273ef0379bcbd"
+		},
+		{
+			"ImportPath": "gopkg.in/go-playground/validator.v8",
+			"Comment": "v8.18.2",
+			"Rev": "5f1438d3fca68893a817e4a66806cea46a9e4ebf"
 		},
 		{
 			"ImportPath": "gopkg.in/inf.v0",

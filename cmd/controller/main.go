@@ -1,12 +1,16 @@
-package controller
+package main
 
 import (
 	"flag"
-	controller2 "github.com/farmer-hutao/k6s/pkg/controller"
 	"time"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
+
+	"github.com/farmer-hutao/k6s/pkg/controller/signals"
+
+	clientset "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
+	informers "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions"
 )
 
 var (
@@ -23,19 +27,19 @@ func main() {
 	flag.Parse()
 
 	// set up signals so we handle the first shutdown signal gracefully
-	stopCh := controller2.SetupSignalHandler()
+	stopCh := signals.SetupSignalHandler()
 
 	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	if err != nil {
 		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
 
-	blueprintClient, err := controller2.NewForConfig(cfg)
+	blueprintClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
 		klog.Fatalf("Error building blueprint clientset: %s", err.Error())
 	}
 
-	blueprintInformerFactory := controller2.NewSharedInformerFactory(blueprintClient, time.Second*30)
+	blueprintInformerFactory := informers.NewSharedInformerFactory(blueprintClient, time.Second*30)
 	controller := NewController(blueprintClient, blueprintInformerFactory.Blueprintcontroller().V1alpha1().Databases())
 	blueprintInformerFactory.Start(stopCh)
 

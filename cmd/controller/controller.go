@@ -1,8 +1,7 @@
-package controller
+package main
 
 import (
 	"fmt"
-	"github.com/farmer-hutao/k6s/pkg/controller"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -14,6 +13,11 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
+	blueprintv1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
+	clientset "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
+	blueprintscheme "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/scheme"
+	informers "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/blueprintcontroller/v1alpha1"
+	listers "github.com/farmer-hutao/k6s/pkg/controller/client/listers/blueprintcontroller/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
@@ -38,9 +42,9 @@ const (
 // Controller is the controller implementation for Database resources
 type Controller struct {
 	// blueprintclientset is a clientset for our own API group
-	blueprintclientset controller.Interface
+	blueprintclientset clientset.Interface
 
-	databasesLister controller.DatabaseLister
+	databasesLister listers.DatabaseLister
 	databasesSynced cache.InformerSynced
 
 	workqueue workqueue.RateLimitingInterface
@@ -50,13 +54,13 @@ type Controller struct {
 
 // NewController returns a new blueprint controller
 func NewController(
-	blueprintclientset controller.Interface,
-	databaseInformer controller.DatabaseInformer) *Controller {
+	blueprintclientset clientset.Interface,
+	databaseInformer informers.DatabaseInformer) *Controller {
 
 	// Create event broadcaster
 	// Add blueprint-controller types to the default Kubernetes Scheme so Events can be
 	// logged for blueprint-controller types.
-	utilruntime.Must(controller.AddToScheme(scheme.Scheme))
+	utilruntime.Must(blueprintscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
@@ -220,7 +224,7 @@ func (c *Controller) syncHandler(key string) error {
 	return nil
 }
 
-func (c *Controller) updateDatabaseStatus(database *controller.Database, install string) error {
+func (c *Controller) updateDatabaseStatus(database *blueprintv1alpha1.Database, install string) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance

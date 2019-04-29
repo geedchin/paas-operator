@@ -8,16 +8,16 @@ Copyright The K6s Authors.
 package internalinterfaces
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller"
-	"time"
+	time "time"
 
+	versioned "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/cache"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // NewInformerFunc takes versioned.Interface and time.Duration to return a SharedIndexInformer.
-type NewInformerFunc func(controller.Interface, time.Duration) cache.SharedIndexInformer
+type NewInformerFunc func(versioned.Interface, time.Duration) cache.SharedIndexInformer
 
 // SharedInformerFactory a small interface to allow for adding an informer without an import cycle
 type SharedInformerFactory interface {

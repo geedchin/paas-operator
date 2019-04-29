@@ -17,7 +17,6 @@ limitations under the License.
 package signals
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller"
 	"os"
 	"os/signal"
 )
@@ -32,7 +31,7 @@ func SetupSignalHandler() (stopCh <-chan struct{}) {
 
 	stop := make(chan struct{})
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, controller.shutdownSignals...)
+	signal.Notify(c, shutdownSignals...)
 	go func() {
 		<-c
 		close(stop)

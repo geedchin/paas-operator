@@ -8,7 +8,7 @@ Copyright The K6s Authors.
 package v1alpha1
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller"
+	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
@@ -17,10 +17,10 @@ import (
 // DatabaseLister helps list Databases.
 type DatabaseLister interface {
 	// List lists all Databases in the indexer.
-	List(selector labels.Selector) (ret []*controller.Database, err error)
+	List(selector labels.Selector) (ret []*v1alpha1.Database, err error)
 	// Databases returns an object that can list and get Databases.
 	Databases(namespace string) DatabaseNamespaceLister
-	controller.DatabaseListerExpansion
+	DatabaseListerExpansion
 }
 
 // databaseLister implements the DatabaseLister interface.
@@ -34,9 +34,9 @@ func NewDatabaseLister(indexer cache.Indexer) DatabaseLister {
 }
 
 // List lists all Databases in the indexer.
-func (s *databaseLister) List(selector labels.Selector) (ret []*controller.Database, err error) {
+func (s *databaseLister) List(selector labels.Selector) (ret []*v1alpha1.Database, err error) {
 	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*controller.Database))
+		ret = append(ret, m.(*v1alpha1.Database))
 	})
 	return ret, err
 }
@@ -49,10 +49,10 @@ func (s *databaseLister) Databases(namespace string) DatabaseNamespaceLister {
 // DatabaseNamespaceLister helps list and get Databases.
 type DatabaseNamespaceLister interface {
 	// List lists all Databases in the indexer for a given namespace.
-	List(selector labels.Selector) (ret []*controller.Database, err error)
+	List(selector labels.Selector) (ret []*v1alpha1.Database, err error)
 	// Get retrieves the Database from the indexer for a given namespace and name.
-	Get(name string) (*controller.Database, error)
-	controller.DatabaseNamespaceListerExpansion
+	Get(name string) (*v1alpha1.Database, error)
+	DatabaseNamespaceListerExpansion
 }
 
 // databaseNamespaceLister implements the DatabaseNamespaceLister
@@ -63,21 +63,21 @@ type databaseNamespaceLister struct {
 }
 
 // List lists all Databases in the indexer for a given namespace.
-func (s databaseNamespaceLister) List(selector labels.Selector) (ret []*controller.Database, err error) {
+func (s databaseNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Database, err error) {
 	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*controller.Database))
+		ret = append(ret, m.(*v1alpha1.Database))
 	})
 	return ret, err
 }
 
 // Get retrieves the Database from the indexer for a given namespace and name.
-func (s databaseNamespaceLister) Get(name string) (*controller.Database, error) {
+func (s databaseNamespaceLister) Get(name string) (*v1alpha1.Database, error) {
 	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.NewNotFound(controller.Resource("database"), name)
+		return nil, errors.NewNotFound(v1alpha1.Resource("database"), name)
 	}
-	return obj.(*controller.Database), nil
+	return obj.(*v1alpha1.Database), nil
 }

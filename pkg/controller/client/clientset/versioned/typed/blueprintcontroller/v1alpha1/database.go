@@ -8,13 +8,14 @@ Copyright The K6s Authors.
 package v1alpha1
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller"
 	"time"
 
+	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
+	scheme "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	rest "k8s.io/client-go/rest"
 )
 
 // DatabasesGetter has a method to return a DatabaseInterface.
@@ -25,16 +26,16 @@ type DatabasesGetter interface {
 
 // DatabaseInterface has methods to work with Database resources.
 type DatabaseInterface interface {
-	Create(*controller.Database) (*controller.Database, error)
-	Update(*controller.Database) (*controller.Database, error)
-	UpdateStatus(*controller.Database) (*controller.Database, error)
+	Create(*v1alpha1.Database) (*v1alpha1.Database, error)
+	Update(*v1alpha1.Database) (*v1alpha1.Database, error)
+	UpdateStatus(*v1alpha1.Database) (*v1alpha1.Database, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*controller.Database, error)
-	List(opts v1.ListOptions) (*controller.DatabaseList, error)
+	Get(name string, options v1.GetOptions) (*v1alpha1.Database, error)
+	List(opts v1.ListOptions) (*v1alpha1.DatabaseList, error)
 	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *controller.Database, err error)
-	controller.DatabaseExpansion
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Database, err error)
+	DatabaseExpansion
 }
 
 // databases implements DatabaseInterface
@@ -44,7 +45,7 @@ type databases struct {
 }
 
 // newDatabases returns a Databases
-func newDatabases(c *controller.BlueprintcontrollerV1alpha1Client, namespace string) *databases {
+func newDatabases(c *BlueprintcontrollerV1alpha1Client, namespace string) *databases {
 	return &databases{
 		client: c.RESTClient(),
 		ns:     namespace,
@@ -52,29 +53,29 @@ func newDatabases(c *controller.BlueprintcontrollerV1alpha1Client, namespace str
 }
 
 // Get takes name of the database, and returns the corresponding database object, and an error if there is any.
-func (c *databases) Get(name string, options v1.GetOptions) (result *controller.Database, err error) {
-	result = &controller.Database{}
+func (c *databases) Get(name string, options v1.GetOptions) (result *v1alpha1.Database, err error) {
+	result = &v1alpha1.Database{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("databases").
 		Name(name).
-		VersionedParams(&options, controller.ParameterCodec).
+		VersionedParams(&options, scheme.ParameterCodec).
 		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of Databases that match those selectors.
-func (c *databases) List(opts v1.ListOptions) (result *controller.DatabaseList, err error) {
+func (c *databases) List(opts v1.ListOptions) (result *v1alpha1.DatabaseList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
 	}
-	result = &controller.DatabaseList{}
+	result = &v1alpha1.DatabaseList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("databases").
-		VersionedParams(&opts, controller.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
 		Do().
 		Into(result)
@@ -91,14 +92,14 @@ func (c *databases) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.client.Get().
 		Namespace(c.ns).
 		Resource("databases").
-		VersionedParams(&opts, controller.ParameterCodec).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
 		Watch()
 }
 
 // Create takes the representation of a database and creates it.  Returns the server's representation of the database, and an error, if there is any.
-func (c *databases) Create(database *controller.Database) (result *controller.Database, err error) {
-	result = &controller.Database{}
+func (c *databases) Create(database *v1alpha1.Database) (result *v1alpha1.Database, err error) {
+	result = &v1alpha1.Database{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("databases").
@@ -109,8 +110,8 @@ func (c *databases) Create(database *controller.Database) (result *controller.Da
 }
 
 // Update takes the representation of a database and updates it. Returns the server's representation of the database, and an error, if there is any.
-func (c *databases) Update(database *controller.Database) (result *controller.Database, err error) {
-	result = &controller.Database{}
+func (c *databases) Update(database *v1alpha1.Database) (result *v1alpha1.Database, err error) {
+	result = &v1alpha1.Database{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("databases").
@@ -124,8 +125,8 @@ func (c *databases) Update(database *controller.Database) (result *controller.Da
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
-func (c *databases) UpdateStatus(database *controller.Database) (result *controller.Database, err error) {
-	result = &controller.Database{}
+func (c *databases) UpdateStatus(database *v1alpha1.Database) (result *v1alpha1.Database, err error) {
+	result = &v1alpha1.Database{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("databases").
@@ -157,7 +158,7 @@ func (c *databases) DeleteCollection(options *v1.DeleteOptions, listOptions v1.L
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("databases").
-		VersionedParams(&listOptions, controller.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
 		Body(options).
 		Do().
@@ -165,8 +166,8 @@ func (c *databases) DeleteCollection(options *v1.DeleteOptions, listOptions v1.L
 }
 
 // Patch applies the patch and returns the patched database.
-func (c *databases) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *controller.Database, err error) {
-	result = &controller.Database{}
+func (c *databases) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Database, err error) {
+	result = &v1alpha1.Database{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("databases").

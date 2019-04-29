@@ -8,27 +8,27 @@ Copyright The K6s Authors.
 package v1alpha1
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller"
+	internalinterfaces "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
 	// Databases returns a DatabaseInformer.
-	Databases() controller.DatabaseInformer
+	Databases() DatabaseInformer
 }
 
 type version struct {
-	factory          controller.SharedInformerFactory
+	factory          internalinterfaces.SharedInformerFactory
 	namespace        string
-	tweakListOptions controller.TweakListOptionsFunc
+	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
 // New returns a new Interface.
-func New(f controller.SharedInformerFactory, namespace string, tweakListOptions controller.TweakListOptionsFunc) Interface {
+func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
 // Databases returns a DatabaseInformer.
-func (v *version) Databases() controller.DatabaseInformer {
-	return &controller.databaseInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+func (v *version) Databases() DatabaseInformer {
+	return &databaseInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

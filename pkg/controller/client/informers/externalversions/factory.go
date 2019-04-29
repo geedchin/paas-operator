@@ -8,24 +8,26 @@ Copyright The K6s Authors.
 package externalversions
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller"
-	"reflect"
-	"sync"
-	"time"
+	reflect "reflect"
+	sync "sync"
+	time "time"
 
+	versioned "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
+	blueprintcontroller "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/blueprintcontroller"
+	internalinterfaces "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/tools/cache"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // SharedInformerOption defines the functional option type for SharedInformerFactory.
 type SharedInformerOption func(*sharedInformerFactory) *sharedInformerFactory
 
 type sharedInformerFactory struct {
-	client           controller.Interface
+	client           versioned.Interface
 	namespace        string
-	tweakListOptions controller.TweakListOptionsFunc
+	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	lock             sync.Mutex
 	defaultResync    time.Duration
 	customResync     map[reflect.Type]time.Duration
@@ -47,7 +49,7 @@ func WithCustomResyncConfig(resyncConfig map[v1.Object]time.Duration) SharedInfo
 }
 
 // WithTweakListOptions sets a custom filter on all listers of the configured SharedInformerFactory.
-func WithTweakListOptions(tweakListOptions controller.TweakListOptionsFunc) SharedInformerOption {
+func WithTweakListOptions(tweakListOptions internalinterfaces.TweakListOptionsFunc) SharedInformerOption {
 	return func(factory *sharedInformerFactory) *sharedInformerFactory {
 		factory.tweakListOptions = tweakListOptions
 		return factory
@@ -63,7 +65,7 @@ func WithNamespace(namespace string) SharedInformerOption {
 }
 
 // NewSharedInformerFactory constructs a new instance of sharedInformerFactory for all namespaces.
-func NewSharedInformerFactory(client controller.Interface, defaultResync time.Duration) SharedInformerFactory {
+func NewSharedInformerFactory(client versioned.Interface, defaultResync time.Duration) SharedInformerFactory {
 	return NewSharedInformerFactoryWithOptions(client, defaultResync)
 }
 
@@ -71,12 +73,12 @@ func NewSharedInformerFactory(client controller.Interface, defaultResync time.Du
 // Listers obtained via this SharedInformerFactory will be subject to the same filters
 // as specified here.
 // Deprecated: Please use NewSharedInformerFactoryWithOptions instead
-func NewFilteredSharedInformerFactory(client controller.Interface, defaultResync time.Duration, namespace string, tweakListOptions controller.TweakListOptionsFunc) SharedInformerFactory {
+func NewFilteredSharedInformerFactory(client versioned.Interface, defaultResync time.Duration, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) SharedInformerFactory {
 	return NewSharedInformerFactoryWithOptions(client, defaultResync, WithNamespace(namespace), WithTweakListOptions(tweakListOptions))
 }
 
 // NewSharedInformerFactoryWithOptions constructs a new instance of a SharedInformerFactory with additional options.
-func NewSharedInformerFactoryWithOptions(client controller.Interface, defaultResync time.Duration, options ...SharedInformerOption) SharedInformerFactory {
+func NewSharedInformerFactoryWithOptions(client versioned.Interface, defaultResync time.Duration, options ...SharedInformerOption) SharedInformerFactory {
 	factory := &sharedInformerFactory{
 		client:           client,
 		namespace:        v1.NamespaceAll,
@@ -131,7 +133,7 @@ func (f *sharedInformerFactory) WaitForCacheSync(stopCh <-chan struct{}) map[ref
 
 // InternalInformerFor returns the SharedIndexInformer for obj using an internal
 // client.
-func (f *sharedInformerFactory) InformerFor(obj runtime.Object, newFunc controller.NewInformerFunc) cache.SharedIndexInformer {
+func (f *sharedInformerFactory) InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
@@ -155,13 +157,13 @@ func (f *sharedInformerFactory) InformerFor(obj runtime.Object, newFunc controll
 // SharedInformerFactory provides shared informers for resources in all known
 // API group versions.
 type SharedInformerFactory interface {
-	controller.SharedInformerFactory
-	ForResource(resource schema.GroupVersionResource) (controller.GenericInformer, error)
+	internalinterfaces.SharedInformerFactory
+	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Blueprintcontroller() controller.Interface
+	Blueprintcontroller() blueprintcontroller.Interface
 }
 
-func (f *sharedInformerFactory) Blueprintcontroller() controller.Interface {
-	return controller.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Blueprintcontroller() blueprintcontroller.Interface {
+	return blueprintcontroller.New(f, f.namespace, f.tweakListOptions)
 }

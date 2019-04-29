@@ -8,7 +8,9 @@ Copyright The K6s Authors.
 package fake
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller"
+	clientset "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
+	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
+	fakeblueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -21,7 +23,7 @@ import (
 // without applying any validations and/or defaults. It shouldn't be considered a replacement
 // for a real clientset and is mostly useful in simple unit tests.
 func NewSimpleClientset(objects ...runtime.Object) *Clientset {
-	o := testing.NewObjectTracker(controller.scheme, controller.codecs.UniversalDecoder())
+	o := testing.NewObjectTracker(scheme, codecs.UniversalDecoder())
 	for _, obj := range objects {
 		if err := o.Add(obj); err != nil {
 			panic(err)
@@ -56,14 +58,14 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 	return c.discovery
 }
 
-var _ controller.Interface = &Clientset{}
+var _ clientset.Interface = &Clientset{}
 
 // BlueprintcontrollerV1alpha1 retrieves the BlueprintcontrollerV1alpha1Client
-func (c *Clientset) BlueprintcontrollerV1alpha1() controller.BlueprintcontrollerV1alpha1Interface {
-	return &controller.FakeBlueprintcontrollerV1alpha1{Fake: &c.Fake}
+func (c *Clientset) BlueprintcontrollerV1alpha1() blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Interface {
+	return &fakeblueprintcontrollerv1alpha1.FakeBlueprintcontrollerV1alpha1{Fake: &c.Fake}
 }
 
 // Blueprintcontroller retrieves the BlueprintcontrollerV1alpha1Client
-func (c *Clientset) Blueprintcontroller() controller.BlueprintcontrollerV1alpha1Interface {
-	return &controller.FakeBlueprintcontrollerV1alpha1{Fake: &c.Fake}
+func (c *Clientset) Blueprintcontroller() blueprintcontrollerv1alpha1.BlueprintcontrollerV1alpha1Interface {
+	return &fakeblueprintcontrollerv1alpha1.FakeBlueprintcontrollerV1alpha1{Fake: &c.Fake}
 }

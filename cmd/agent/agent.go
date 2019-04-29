@@ -1,10 +1,10 @@
 package main
 
 import (
-	"farmer-hutao/k6s/pkg/agent/pkg"
+	. "github.com/farmer-hutao/k6s/pkg/agent"
 )
 
 func main() {
-	router := pkg.NewGinEngine()
+	router := NewGinEngine()
 	router.Run(":23456")
 }
