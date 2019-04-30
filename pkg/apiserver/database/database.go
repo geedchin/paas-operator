@@ -2,6 +2,8 @@ package database
 
 import "github.com/kataras/iris"
 
+var DatabaseList = make(map[string]Database, 0)
+
 type Database struct {
 	// mysql-5.7-xxx-192.168.19.100
 	Name string `json:"name"`
