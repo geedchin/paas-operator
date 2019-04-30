@@ -1,0 +1,14 @@
+[Unit]
+Description=k6s
+Wants=network-online.target
+After=network.target
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+User=root
+ExecStart=/usr/local/bin/agent
+ExecReload=/usr/local/bin/agent
+
+[Install]
+WantedBy=multi-user.target
