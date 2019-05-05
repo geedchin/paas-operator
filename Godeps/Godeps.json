@@ -357,6 +357,11 @@
 			"Rev": "bab58d77464aa9cf4e84200c3276da0831fe0c03"
 		},
 		{
+			"ImportPath": "github.com/kr/fs",
+			"Comment": "v0.1.0",
+			"Rev": "1455def202f6e05b95cc7bfc7e8ae67ae5141eba"
+		},
+		{
 			"ImportPath": "github.com/mattn/go-isatty",
 			"Comment": "v0.0.7-2-gc1975dc",
 			"Rev": "c1975dc15c1d481e8da23f6ed313bb071136b98f"
@@ -380,6 +385,16 @@
 			"ImportPath": "github.com/peterbourgon/diskv",
 			"Comment": "v2.0.1-14-g0646cca",
 			"Rev": "0646ccaebea1ed1539efcab30cae44019090093f"
+		},
+		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.8.0-17-g059132a",
+			"Rev": "059132a15dd08d6704c67711dae0cf35ab991756"
+		},
+		{
+			"ImportPath": "github.com/pkg/sftp",
+			"Comment": "v1.8.3",
+			"Rev": "08de04f133f27844173471167014e1a753655ac8"
 		},
 		{
 			"ImportPath": "github.com/ryanuber/columnize",
@@ -406,6 +421,34 @@
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/acme/autocert",
+			"Rev": "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/curve25519",
+			"Rev": "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ed25519",
+			"Rev": "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ed25519/internal/edwards25519",
+			"Rev": "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/internal/chacha20",
+			"Rev": "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/internal/subtle",
+			"Rev": "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/poly1305",
+			"Rev": "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/ssh",
 			"Rev": "0c41d7ab0a0ee717d4590a44bcb987dfd9e183eb"
 		},
 		{
