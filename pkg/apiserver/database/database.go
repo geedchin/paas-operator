@@ -1,11 +1,75 @@
 package database
 
 import (
-	"fmt"
+	"errors"
 	"github.com/kataras/iris"
+	"sync"
 )
 
-var DatabaseList = make(map[string]Database, 0)
+type Databases struct {
+	lock  sync.RWMutex
+	dbMap map[string]Database
+}
+
+func (dbs *Databases) Add(name string, db Database) error {
+	dbs.lock.Lock()
+	defer dbs.lock.Unlock()
+	if _, ok := dbs.dbMap[name]; ok {
+		return errors.New("database is already exist: "+ name)
+	}
+	dbs.dbMap[name] = db
+	return nil
+}
+
+func (dbs *Databases) Get(name string) (Database, bool) {
+	dbs.lock.RLock()
+	defer dbs.lock.RUnlock()
+	if db, ok := dbs.dbMap[name]; ok {
+		return db, true
+	}
+	return Database{}, false
+}
+
+var DatabaseList = &Databases{
+	dbMap: make(map[string]Database, 0),
+}
+
+type DatabaseStatus string
+type DatabaseAction string
+
+const (
+	NotInstalled DatabaseStatus = "not-installed"
+	Running      DatabaseStatus = "running"
+	Stoped       DatabaseStatus = "stoped"
+	Failed       DatabaseStatus = "failed"
+	Unknown      DatabaseStatus = "unknown"
+)
+
+const (
+	Start   DatabaseAction = "start"
+	Stop    DatabaseAction = "stop"
+	Install DatabaseAction = "install"
+	Restart DatabaseAction = "restart"
+)
+
+var DatabaseStatusMap = map[DatabaseStatus]struct{}{
+	NotInstalled: {},
+	Running:      {},
+	Stoped:       {},
+	Failed:       {},
+	Unknown:      {},
+}
+
+var DatabaseActionMap = map[DatabaseAction]struct{}{
+	Start:   {},
+	Stop:    {},
+	Install: {},
+	Restart: {},
+}
+
+type Interface interface {
+	UpdateStatus(expect DatabaseStatus)
+}
 
 type Database struct {
 	// mysql-5.7-xxx-192.168.19.100
@@ -24,47 +88,27 @@ type Database struct {
 		Uninstall string            `json:"uninstall"` // uninstall.sh
 		Package   string            `json:"package"`   // mysql-5.7.tar.gz
 		Metadata  map[string]string `json:"metadata"`
-		Status    struct {
-			Expect   string `json:"expect"`   // running
-			Realtime string `json:"realtime"` // failed
-		} `json:"status"`
+		Status    Statusx           `json:"status"`
 	} `json:"app"`
 }
 
-func (d *Database) Create(ctx iris.Context) {
-	var dataBase Database
-
-	if err := ctx.ReadJSON(&dataBase); err != nil {
-		fmt.Println("invalid json from the request body !")
-		ctx.StatusCode(iris.StatusBadRequest)
-		return
-	}
-
-	//if err := upload_agent(dataBase.Host[0].Username,
-	//	dataBase.Host[0].Password, dataBase.Host[0].IP); err != nil {
-	//	fmt.Printf("upload agent to remote host(%s) failed ", dataBase.Host[0].IP)
-	//	ctx.StatusCode(iris.StatusInternalServerError)
-	//	return
-	//}
-
-	// 1. validate ssh connection
-
-	// 2. distribute agent
-
-	// 3. call api - install
-
-	// 4.
+type Statusx struct {
+	Expect   DatabaseStatus `json:"expect"`   // running
+	Realtime DatabaseStatus `json:"realtime"` // failed
 }
 
 // action can be [start / stop / install / restart / uninstall]
-func (d *Database) UpdateStatus(ctx iris.Context) {
-	//switch action {
-	//case "start":
-	//
-	//}
+func (d *Database) UpdateStatus(expect DatabaseStatus) error {
+	if _, ok := DatabaseStatusMap[expect]; !ok {
+		return errors.New("expect status is illegal: " + string(expect))
+	}
 
+	d.App.Status.Expect = expect
+
+	// TODO call agent
+	return nil
 }
 
-func (d *Database) Status(ctx iris.Context) {
-
+func (d *Database) Status(ctx iris.Context) *Statusx {
+	return &d.App.Status
 }

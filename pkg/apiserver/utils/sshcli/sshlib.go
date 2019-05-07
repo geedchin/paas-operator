@@ -1,8 +1,9 @@
-package utils
+package sshcli
 
 import (
 	"fmt"
 	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 	"os"
 )
 
