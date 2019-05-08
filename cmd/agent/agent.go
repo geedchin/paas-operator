@@ -1,10 +1,10 @@
 package main
 
 import (
-	. "github.com/farmer-hutao/k6s/pkg/agent"
+	"github.com/farmer-hutao/k6s/pkg/agent"
 )
 
 func main() {
-	app := NewGinEngine()
+	app := agent.NewGinEngine()
 	app.Run(":3335")
 }
