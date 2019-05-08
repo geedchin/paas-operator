@@ -43,7 +43,8 @@ func CreateDatabase(ctx iris.Context) {
 
 func UpdateDatabaseStatus(ctx iris.Context) {
 	dbName := ctx.Params().GetString("d_name")
-	action := ctx.Params().GetString("action")
+	status := ctx.Params().GetString("status")
+	expectStatus := database.DatabaseStatus(status)
 
 	// validate dbname
 	if len(dbName) < 1 {
@@ -62,29 +63,20 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 		return
 	}
 
-	// validate whether the action is illegal
-	if _, ok := database.DatabaseActionMap[database.DatabaseAction(action)]; !ok {
+	// validate whether the expect status is illegal
+	if _, ok := database.DatabaseStatusMap[expectStatus]; !ok {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString("database action is illegal: " + action)
-		glog.Error("database action is illegal: " + action)
+		ctx.WriteString("database status is illegal: " + status)
+		glog.Error("database status is illegal: " + status)
 		return
 	}
 
-	dbAction := database.DatabaseAction(action)
-	// TODO call agent
-	switch dbAction {
-	case database.Start:
-		db.App.Status.Expect = database.Running
-	case database.Stop:
-		db.App.Status.Expect = database.Stoped
-	case database.Install:
-		db.App.Status.Expect = database.Running
-	case database.Restart:
-		// TODO(ht): how to restart?
-	}
+	db.App.Status.Expect = expectStatus
+	// update db's status
+	go db.UpdateStatus()
 
 	ctx.StatusCode(iris.StatusAccepted)
-	ctx.JSON(iris.Map{
+	_, _ = ctx.JSON(iris.Map{
 		"name":   db.Name,
 		"status": db.App.Status,
 	})
@@ -102,7 +94,7 @@ func GetDatabaseStatus(ctx iris.Context) {
 		return
 	}
 
-	status := db.App.Status
+	status := db.Status()
 
 	_, err := ctx.JSON(iris.Map{
 		"name":   db.Name,

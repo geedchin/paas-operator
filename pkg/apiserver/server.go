@@ -30,6 +30,6 @@ func applyRoute(app *iris.Application) {
 	dbRouter.Get("/{d_name}/status", GetDatabaseStatus)
 	// 创建Database资源
 	dbRouter.Post("/create", CreateDatabase)
-	// 修改Database状态，action-> start/stop/install/restart
-	dbRouter.Put("/{d_name:string}/{action:string}", UpdateDatabaseStatus)
+	// 修改Database的期望状态，status-> running/stoped/not-installed
+	dbRouter.Put("/{d_name:string}/{status:string}", UpdateDatabaseStatus)
 }

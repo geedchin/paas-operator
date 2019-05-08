@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -20,6 +21,15 @@ type AppInfo struct {
 	Uninstall string            `json:"uninstall"`
 	Package   string            `json:"package"`
 	Metadata  map[string]string `json:"metadata"`
+}
+
+func (ai *AppInfo) Print() string {
+	bytes, err := json.MarshalIndent(ai, "", " ")
+	if err != nil {
+		log.Println(err.Error())
+		return err.Error()
+	}
+	return string(bytes)
 }
 
 type Action string
@@ -72,6 +82,9 @@ func DoAction(c *gin.Context) {
 		return
 	}
 
+	log.Println("Action: " + action)
+	log.Println("AppInfo: " + appInfo.Print())
+
 	do := func(action Action, appInfo *AppInfo) error {
 		// eg. install.sh
 		var scriptName string
@@ -96,12 +109,17 @@ func DoAction(c *gin.Context) {
 
 		scriptPath, err := getScriptIfNotExist(scriptName, repoUrl)
 		if err != nil {
+			log.Println("wget script failed: " + err.Error())
 			return err
 		}
 
-		//TODO apply env
+		// add args to script
+		var args string
+		for k, v := range appInfo.Metadata {
+			args += k + "=" + v + " "
+		}
 
-		err = execInLinux("sh", "/opt/app/", []string{scriptPath})
+		err = execInLinux("sh", "/opt/app/", []string{scriptPath, args})
 		if err != nil {
 			return err
 		}
@@ -192,7 +210,6 @@ func execInLinux(cmdName, execPath string, params []string) error {
 	cmd.Start()
 	return cmd.Wait()
 }
-
 
 //func getID(user, uorg string) (string, error) {
 //	cmd := exec.Command("id", uorg, user)
