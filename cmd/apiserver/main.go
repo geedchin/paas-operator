@@ -1,14 +1,7 @@
 package main
 
-import "github.com/kataras/iris"
+import "github.com/farmer-hutao/k6s/pkg/apiserver"
 
 func main() {
-    app := iris.Default()
-    app.Get("/ping", func(ctx iris.Context) {
-        ctx.JSON(iris.Map{
-            "message": "pong",
-        })
-    })
-    // listen and serve on http://0.0.0.0:8080.
-    app.Run(iris.Addr(":8080"))
+    apiserver.Run()
 }

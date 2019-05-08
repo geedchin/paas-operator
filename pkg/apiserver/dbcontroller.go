@@ -1,9 +1,11 @@
 package apiserver
 
 import (
+	"fmt"
 	"github.com/farmer-hutao/k6s/pkg/apiserver/database"
 	"github.com/golang/glog"
 	"github.com/kataras/iris"
+	"time"
 )
 
 func CreateDatabase(ctx iris.Context) {
@@ -25,6 +27,7 @@ func CreateDatabase(ctx iris.Context) {
 
 	db.App.Status.Expect = database.NotInstalled
 	db.App.Status.Realtime = database.NotInstalled
+	db.App.Metadata["CreateAt"] = time.Now().Format("2006-01-02 15:04:05")
 
 	err := database.DatabaseList.Add(db.Name, db)
 	if err != nil {
@@ -35,6 +38,7 @@ func CreateDatabase(ctx iris.Context) {
 	}
 
 	ctx.StatusCode(iris.StatusCreated)
+	ctx.JSON(db)
 }
 
 func UpdateDatabaseStatus(ctx iris.Context) {
@@ -80,7 +84,10 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 	}
 
 	ctx.StatusCode(iris.StatusAccepted)
-	ctx.WriteString("database action is progress: " + action)
+	ctx.JSON(iris.Map{
+		"name":   db.Name,
+		"status": db.App.Status,
+	})
 	return
 }
 
@@ -89,8 +96,9 @@ func GetDatabaseStatus(ctx iris.Context) {
 	db, ok := database.DatabaseList.Get(dbName)
 	if !ok {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString("d_name is not exist: " + dbName)
-		glog.Error("d_name is not exist: " + dbName)
+		msg := fmt.Sprintf("Database with name <%s> is not exist: ", dbName)
+		ctx.WriteString(msg)
+		glog.Error(msg)
 		return
 	}
 

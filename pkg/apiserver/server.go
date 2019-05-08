@@ -27,7 +27,7 @@ func applyRoute(app *iris.Application) {
 	dbRouter := versionRouter.Party("/database")
 
 	// 查询Database状态
-	dbRouter.Get("{d_name}/status", GetDatabaseStatus)
+	dbRouter.Get("/{d_name}/status", GetDatabaseStatus)
 	// 创建Database资源
 	dbRouter.Post("/create", CreateDatabase)
 	// 修改Database状态，action-> start/stop/install/restart
