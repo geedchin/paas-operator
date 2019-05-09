@@ -220,6 +220,10 @@ func CallToAgent(action DatabaseAction, db *Database, ctx iris.Context) error {
 	appInfo.Package = db.App.Package
 	appInfo.Metadata = db.App.Metadata
 
+	if _, ok := db.App.Metadata["REPO_URL"]; !ok {
+		appInfo.Metadata["REPO_URL"] = appInfo.RepoURL
+	}
+
 	jsonBody, err := json.Marshal(appInfo)
 	if err != nil {
 		ctx.Application().Logger().Error(err)
