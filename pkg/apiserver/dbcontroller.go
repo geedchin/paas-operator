@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/farmer-hutao/k6s/pkg/apiserver/database"
 	"github.com/golang/glog"
 	"github.com/kataras/iris"
+
+	"github.com/farmer-hutao/k6s/pkg/apiserver/database"
 )
 
 func CreateDatabase(ctx iris.Context) {
-	var db database.Database
+	var db database.GenericDatabase
 
+	// use request body init database
 	if err := ctx.ReadJSON(&db); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
@@ -20,19 +22,25 @@ func CreateDatabase(ctx iris.Context) {
 		return
 	}
 
-	if len(db.Name) < 1 {
+	// validate database's name
+	if len(db.Name()) < 1 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString("CreateDatabase Error, Database name is illegal")
-		ctx.Application().Logger().Error("CreateDatabase Error, Database name is illegal")
+		ctx.WriteString("CreateDatabase Error, GenericDatabase name is illegal")
+		ctx.Application().Logger().Error("CreateDatabase Error, GenericDatabase name is illegal")
 		return
 	}
 
-	// init database status
-	db.App.Status.Expect = database.NotInstalled
-	db.App.Status.Realtime = database.NotInstalled
-	db.App.Metadata["CreateAt"] = time.Now().Format("2006-01-02 15:04:05")
+	// init database status if it is empty
+	if db.App().Status.Expect == "" {
+		db.App().Status.Expect = database.NotInstalled
+	}
+	if db.App().Status.Realtime == "" {
+		db.App().Status.Realtime = database.NotInstalled
+	}
 
-	err := database.DatabaseList.Add(db.Name, db)
+	db.App().Metadata["CreateAt"] = time.Now().Format("2006-01-02 15:04:05")
+
+	err := database.GetMemoryDatabases().Add(db.Name(), &db)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
@@ -61,13 +69,13 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 	// validate dbname
 	if len(dbName) < 1 {
 		ctx.StatusCode(iris.StatusBadRequest)
-		ctx.WriteString("CreateDatabase Error, Database name is illegal")
-		ctx.Application().Logger().Error("CreateDatabase Error, Database name is illegal")
+		ctx.WriteString("CreateDatabase Error, GenericDatabase name is illegal")
+		ctx.Application().Logger().Error("CreateDatabase Error, GenericDatabase name is illegal")
 		return
 	}
 
 	// validate whether the db exists
-	db, ok := database.DatabaseList.Get(dbName)
+	db, ok := database.GetMemoryDatabases().Get(dbName)
 	if !ok {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString("d_name is not exist: " + dbName)
@@ -84,7 +92,7 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 	}
 
 	ctx.Application().Logger().Infof("UpdataDatabaseStatus: the database with name <%s> expect status is <%s> "+
-		"and realtime status is <%s>;", db.Name, db.Status().Expect, db.Status().Realtime)
+		"and realtime status is <%s>;", db.Name(), db.Status().Expect, db.Status().Realtime)
 
 	// update db resource status
 	switch expectStatus {
@@ -95,31 +103,31 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 	case database.Running: // install or start a database
 		// install a database
 		if db.Status().Expect == database.NotInstalled {
-			db.App.Status.Expect = database.Running
-			db.App.Status.Expect = database.Installing
+			db.App().Status.Expect = database.Running
+			db.App().Status.Realtime = database.Installing
 			// update db's real status
 			go db.UpdateStatus(database.AInstall, ctx)
 
 			// start a database
 		} else if db.Status().Expect == database.Stopped {
-			db.App.Status.Expect = database.Running
-			db.App.Status.Realtime = database.Starting
+			db.App().Status.Expect = database.Running
+			db.App().Status.Realtime = database.Starting
 			// update db's real status
 			go db.UpdateStatus(database.AStart, ctx)
 		}
 		// stop a database
 	case database.Stopped:
 		if db.Status().Expect == database.Running {
-			db.App.Status.Expect = database.Stopped
-			db.App.Status.Realtime = database.Stopping
+			db.App().Status.Expect = database.Stopped
+			db.App().Status.Realtime = database.Stopping
 			// update db's real status
 			go db.UpdateStatus(database.AStop, ctx)
 		}
 		// restart a database
 	case database.Restart:
-		if db.Status().Expect == database.Running{
-			db.App.Status.Expect = database.Running
-			db.App.Status.Realtime = database.Restarting
+		if db.Status().Expect == database.Running {
+			db.App().Status.Expect = database.Running
+			db.App().Status.Realtime = database.Restarting
 			// update db's real status
 			go db.UpdateStatus(database.ARestart, ctx)
 		}
@@ -127,7 +135,7 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 
 	ctx.StatusCode(iris.StatusAccepted)
 	_, _ = ctx.JSON(iris.Map{
-		"name":   db.Name,
+		"name":   db.Name(),
 		"status": db.Status(),
 	})
 	return
@@ -135,10 +143,10 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 
 func GetDatabaseStatus(ctx iris.Context) {
 	dbName := ctx.Params().GetString("d_name")
-	db, ok := database.DatabaseList.Get(dbName)
+	db, ok := database.GetMemoryDatabases().Get(dbName)
 	if !ok {
 		ctx.StatusCode(iris.StatusBadRequest)
-		msg := fmt.Sprintf("Database with name <%s> is not exist: ", dbName)
+		msg := fmt.Sprintf("GenericDatabase with name <%s> is not exist: ", dbName)
 		ctx.WriteString(msg)
 		ctx.Application().Logger().Error(msg)
 		return
@@ -147,7 +155,7 @@ func GetDatabaseStatus(ctx iris.Context) {
 	status := db.Status()
 
 	_, err := ctx.JSON(iris.Map{
-		"name":   db.Name,
+		"name":   db.Name(),
 		"status": status,
 	})
 	if err != nil {
