@@ -93,6 +93,8 @@ func InitAgent(ip, username, password string, ctx iris.Context) error {
 	ctx.Application().Logger().Info("start to init agent!!!")
 
 	agentTarPath := filepath.Join(WORK_DIR, AGENT_ZIP_NAME)
+	tmpTarPath := filepath.Join("/tmp/", AGENT_ZIP_NAME)
+
 	sshCli := sshcli.New(ip, username, password, "22")
 	if err := sshCli.ValidateConn(); err != nil {
 		ctx.Application().Logger().Error(err)
@@ -101,13 +103,13 @@ func InitAgent(ip, username, password string, ctx iris.Context) error {
 	defer sshCli.Cli.Close()
 
 	// upload
-	if err := sshCli.UploadFile(agentTarPath, agentTarPath); err != nil {
+	if err := sshCli.UploadFile(agentTarPath, tmpTarPath); err != nil {
 		ctx.Application().Logger().Error(err)
 		return err
 	}
 
 	// start agent
-	cmd := fmt.Sprintf("tar -xzvf %s -C %s && sh %sagent/agent.sh", agentTarPath, WORK_DIR, WORK_DIR)
+	cmd := fmt.Sprintf("mkdir %s && tar -xzvf %s -C %s && sh %sagent/agent.sh", WORK_DIR, tmpTarPath, WORK_DIR, WORK_DIR)
 	result, err := sshCli.ExecCmd(cmd)
 	ctx.Application().Logger().Infof("Exec cmd: <%s> get result: <%s>", cmd, result)
 	if err != nil {

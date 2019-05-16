@@ -23,7 +23,7 @@ func CreateDatabase(ctx iris.Context) {
 	}
 
 	// validate database's name
-	if len(db.Name()) < 1 {
+	if len(db.GetName()) < 1 {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString("CreateDatabase Error, GenericDatabase name is illegal")
 		ctx.Application().Logger().Error("CreateDatabase Error, GenericDatabase name is illegal")
@@ -31,16 +31,16 @@ func CreateDatabase(ctx iris.Context) {
 	}
 
 	// init database status if it is empty
-	if db.App().Status.Expect == "" {
-		db.App().Status.Expect = database.NotInstalled
+	if db.GetApp().Status.Expect == "" {
+		db.GetApp().Status.Expect = database.NotInstalled
 	}
-	if db.App().Status.Realtime == "" {
-		db.App().Status.Realtime = database.NotInstalled
+	if db.GetApp().Status.Realtime == "" {
+		db.GetApp().Status.Realtime = database.NotInstalled
 	}
 
-	db.App().Metadata["CreateAt"] = time.Now().Format("2006-01-02 15:04:05")
+	db.GetApp().Metadata["CreateAt"] = time.Now().Format("2006-01-02 15:04:05")
 
-	err := database.GetMemoryDatabases().Add(db.Name(), &db)
+	err := database.GetMemoryDatabases().Add(db.GetName(), &db)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
@@ -92,7 +92,7 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 	}
 
 	ctx.Application().Logger().Infof("UpdataDatabaseStatus: the database with name <%s> expect status is <%s> "+
-		"and realtime status is <%s>;", db.Name(), db.Status().Expect, db.Status().Realtime)
+		"and realtime status is <%s>;", db.GetName(), db.GetStatus().Expect, db.GetStatus().Realtime)
 
 	// update db resource status
 	switch expectStatus {
@@ -102,32 +102,32 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 
 	case database.Running: // install or start a database
 		// install a database
-		if db.Status().Expect == database.NotInstalled {
-			db.App().Status.Expect = database.Running
-			db.App().Status.Realtime = database.Installing
+		if db.GetStatus().Expect == database.NotInstalled {
+			db.GetApp().Status.Expect = database.Running
+			db.GetApp().Status.Realtime = database.Installing
 			// update db's real status
 			go db.UpdateStatus(database.AInstall, ctx)
 
 			// start a database
-		} else if db.Status().Expect == database.Stopped {
-			db.App().Status.Expect = database.Running
-			db.App().Status.Realtime = database.Starting
+		} else if db.GetStatus().Expect == database.Stopped {
+			db.GetApp().Status.Expect = database.Running
+			db.GetApp().Status.Realtime = database.Starting
 			// update db's real status
 			go db.UpdateStatus(database.AStart, ctx)
 		}
 		// stop a database
 	case database.Stopped:
-		if db.Status().Expect == database.Running {
-			db.App().Status.Expect = database.Stopped
-			db.App().Status.Realtime = database.Stopping
+		if db.GetStatus().Expect == database.Running {
+			db.GetApp().Status.Expect = database.Stopped
+			db.GetApp().Status.Realtime = database.Stopping
 			// update db's real status
 			go db.UpdateStatus(database.AStop, ctx)
 		}
 		// restart a database
 	case database.Restart:
-		if db.Status().Expect == database.Running {
-			db.App().Status.Expect = database.Running
-			db.App().Status.Realtime = database.Restarting
+		if db.GetStatus().Expect == database.Running {
+			db.GetApp().Status.Expect = database.Running
+			db.GetApp().Status.Realtime = database.Restarting
 			// update db's real status
 			go db.UpdateStatus(database.ARestart, ctx)
 		}
@@ -135,8 +135,8 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 
 	ctx.StatusCode(iris.StatusAccepted)
 	_, _ = ctx.JSON(iris.Map{
-		"name":   db.Name(),
-		"status": db.Status(),
+		"name":   db.GetName(),
+		"status": db.GetStatus(),
 	})
 	return
 }
@@ -152,10 +152,10 @@ func GetDatabaseStatus(ctx iris.Context) {
 		return
 	}
 
-	status := db.Status()
+	status := db.GetStatus()
 
 	_, err := ctx.JSON(iris.Map{
-		"name":   db.Name(),
+		"name":   db.GetName(),
 		"status": status,
 	})
 	if err != nil {
