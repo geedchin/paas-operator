@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kataras/iris"
 
 	"github.com/farmer-hutao/k6s/pkg/apiserver/database"
@@ -40,7 +39,8 @@ func CreateDatabase(ctx iris.Context) {
 
 	db.GetApp().Metadata["CreateAt"] = time.Now().Format("2006-01-02 15:04:05")
 
-	err := database.GetMemoryDatabases().Add(db.GetName(), &db)
+	//err := database.GetMemoryDatabases().Add(db.GetName(), &db)
+	err := database.GetETCDDatabases().Add(db.GetName(), &db)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
@@ -75,11 +75,12 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 	}
 
 	// validate whether the db exists
-	db, ok := database.GetMemoryDatabases().Get(dbName)
+	//db, ok := database.GetMemoryDatabases().Get(dbName)
+	db, ok := database.GetETCDDatabases().Get(dbName)
 	if !ok {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString("d_name is not exist: " + dbName)
-		glog.Error("d_name is not exist: " + dbName)
+		ctx.Application().Logger().Errorf("d_name is not exist: %s" ,dbName)
 		return
 	}
 
@@ -87,7 +88,7 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 	if _, ok := database.DatabaseStatusMap[expectStatus]; !ok {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString("database status is illegal: " + status)
-		glog.Error("database status is illegal: " + status)
+		ctx.Application().Logger().Errorf("database status is illegal: " + status)
 		return
 	}
 

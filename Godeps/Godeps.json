@@ -41,6 +41,36 @@
 			"Rev": "b565731e1464263de0bda75f2e45d97b54b60110"
 		},
 		{
+			"ImportPath": "github.com/coreos/etcd/client",
+			"Comment": "v3.3.13",
+			"Rev": "98d308426819d892e149fe45f6fd542464cb1f9d"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/pathutil",
+			"Comment": "v3.3.13",
+			"Rev": "98d308426819d892e149fe45f6fd542464cb1f9d"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/srv",
+			"Comment": "v3.3.13",
+			"Rev": "98d308426819d892e149fe45f6fd542464cb1f9d"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/pkg/types",
+			"Comment": "v3.3.13",
+			"Rev": "98d308426819d892e149fe45f6fd542464cb1f9d"
+		},
+		{
+			"ImportPath": "github.com/coreos/etcd/version",
+			"Comment": "v3.3.13",
+			"Rev": "98d308426819d892e149fe45f6fd542464cb1f9d"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-semver/semver",
+			"Comment": "v0.3.0",
+			"Rev": "e214231b295a8ea9479f11b70b35d5acf3556d9b"
+		},
+		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
 			"Comment": "v1.1.1-1-gd8f796a",
 			"Rev": "d8f796af33cc11cb798c1aaeb27a4ebc5099927d"
@@ -101,10 +131,6 @@
 			"ImportPath": "github.com/gogo/protobuf/sortkeys",
 			"Comment": "v1.1.1-34-g07eab6a8",
 			"Rev": "07eab6a8298cf32fac45cceaac59424f98421bbc"
-		},
-		{
-			"ImportPath": "github.com/golang/glog",
-			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 		},
 		{
 			"ImportPath": "github.com/golang/groupcache/lru",

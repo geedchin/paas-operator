@@ -32,6 +32,14 @@ func (d *GenericDatabase) UpdateStatus(action DatabaseAction, ctx iris.Context) 
 	ctx.Application().Logger().Infof("The database with name <%s> start update status; "+
 		"expect status: <%s>; realtime status: <%s>;", d.Name, d.App.Status.Expect, d.App.Status.Realtime)
 
+	// TODO(ht) 考虑并发
+	defer func() {
+		err := GetETCDDatabases().Add(d.GetName(), d)
+		if err != nil {
+			ctx.Application().Logger().Errorf("Got some error: %s", err.Error())
+		}
+	}()
+
 	switch action {
 	case AInstall:
 		if err := InitAgent(d.Host[0].IP, d.Host[0].Username, d.Host[0].Password, ctx); err != nil {
