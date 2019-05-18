@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"io"
 	"log"
@@ -14,61 +13,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	WORK_DIR = "/opt/app/"
-)
-
-type AppInfo struct {
-	RepoURL   string            `json:"repo_url"`
-	Install   string            `json:"install"`
-	Start     string            `json:"start"`
-	Stop      string            `json:"stop"`
-	Restart   string            `json:"restart"`
-	Uninstall string            `json:"uninstall"`
-	Package   string            `json:"package"`
-	Metadata  map[string]string `json:"metadata"`
-}
-
-func (ai *AppInfo) Print() string {
-	bytes, err := json.MarshalIndent(ai, "", " ")
-	if err != nil {
-		log.Println(err.Error())
-		return err.Error()
-	}
-	return string(bytes)
-}
-
-type Action string
-
-const (
-	Install   Action = "install"
-	Start     Action = "start"
-	Stop      Action = "stop"
-	Restart   Action = "restart"
-	Uninstall Action = "uninstall"
-)
-
-var ActionMap = map[Action]struct{}{
-	Install:   {},
-	Start:     {},
-	Stop:      {},
-	Restart:   {},
-	Uninstall: {},
-}
-
 func NewGinEngine() *gin.Engine {
 	r := gin.Default()
 
+	// for test only
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
 	})
 
+	// action can only be [ install, start, stop, restart, uninstall ]
 	r.POST("/:action", DoAction)
 	return r
 }
 
+// DoAction knows how to judge the script to be executed
+// according to the Action
+
+// if ok, return 200 and {"msg":"ok"}
+// if some error occer, return not200 and {"error":"detail info"}
 func DoAction(c *gin.Context) {
 	// validate action
 	action := c.Param("action")
@@ -79,7 +43,7 @@ func DoAction(c *gin.Context) {
 		return
 	}
 
-	// apply app info
+	// apply request body to appInfo
 	var appInfo AppInfo
 	if err := c.ShouldBindJSON(&appInfo); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -91,10 +55,12 @@ func DoAction(c *gin.Context) {
 	log.Println("Action: " + action)
 	log.Println("AppInfo: " + appInfo.Print())
 
-	do := func(action Action, appInfo *AppInfo) error {
-		// eg. install.sh
+	// doAction get the Action & AppInfo, then exec a corresponding script.
+	doAction := func(action Action, appInfo *AppInfo) error {
+		// eg. [ install.sh, start.sh, ... ]
 		var scriptName string
 		var repoUrl = appInfo.RepoURL
+
 		switch action {
 		case Install:
 			scriptName = appInfo.Install
@@ -108,31 +74,33 @@ func DoAction(c *gin.Context) {
 			scriptName = appInfo.Uninstall
 		}
 
-		//validate the len(name) with script > 0
+		//validate scriptName
 		if len(scriptName) < 1 {
 			return errors.New("script name illegal: " + scriptName)
 		}
 
+		// prepare the script
 		scriptPath, err := getScriptIfNotExist(scriptName, repoUrl)
 		if err != nil {
 			log.Println("wget script failed: " + err.Error())
 			return err
 		}
 
-		// add args to script
+		// prepare args for script
 		var args string
 		for k, v := range appInfo.Metadata {
 			args += k + "=" + v + " "
 		}
 
-		err = execInLinux("sh", WORK_DIR, []string{scriptPath, args})
+		// exec the script
+		err = execInLinux("sh", WorkDir, []string{scriptPath, args})
 		if err != nil {
 			return err
 		}
 		return nil
 	}
 
-	err := do(Action(action), &appInfo)
+	err := doAction(Action(action), &appInfo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -149,7 +117,7 @@ func DoAction(c *gin.Context) {
 // origin script: http://xxx:nn/xxx/xxx.sh
 // return /opt/app/xxx.sh, error
 func getScriptIfNotExist(scriptName, repoUrl string) (string, error) {
-	scriptPath := filepath.Join(WORK_DIR,scriptName)
+	scriptPath := filepath.Join(WorkDir, scriptName)
 	exist, err := pathExists(scriptPath)
 	if err != nil {
 		return "", err
@@ -161,18 +129,20 @@ func getScriptIfNotExist(scriptName, repoUrl string) (string, error) {
 
 	// file not exist, do wget
 
-	// if workdir is not exist
-	err = os.MkdirAll(WORK_DIR, os.ModePerm)
+	// ensure the workdir is exist
+	err = os.MkdirAll(WorkDir, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
-	err = execInLinux("wget", WORK_DIR, []string{repoUrl + scriptName})
+	err = execInLinux("wget", WorkDir, []string{repoUrl + scriptName})
 	if err != nil {
+		log.Println("Wget Failed!!!")
 		return "", err
 	}
 	return scriptPath, nil
 }
 
+// exist -> true; else -> false; if some error occur, return the err
 func pathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -184,6 +154,7 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
+// execInLinux can exec a command with some params in linux system
 func execInLinux(cmdName, execPath string, params []string) error {
 	cmd := exec.Command(cmdName, params...)
 	cmd.Dir = execPath
@@ -213,6 +184,9 @@ func execInLinux(cmdName, execPath string, params []string) error {
 	go printLog(outReader)
 	go printLog(errReader)
 
-	cmd.Start()
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
 	return cmd.Wait()
 }

@@ -4,17 +4,29 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kataras/iris"
 	"log"
+	"os"
 	"time"
 
 	"github.com/coreos/etcd/client"
 )
 
 var globalKapi client.KeysAPI
-var etcdEndpoint = "http://127.0.0.1:2379"
-var dbPrefix = "/k6s/database"
+var etcdEndpoint = os.Getenv("ETCD_ENDPOINT")
+var dbPrefix = os.Getenv("ETCD_DB_PREFIX")
 
 func init() {
+	if etcdEndpoint == "" {
+		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_ENDPOINT", etcdEndpoint)
+		etcdEndpoint = "http://127.0.0.1:2379"
+	} else {
+		log.Printf("ETCD ENDPOINT: %s", etcdEndpoint)
+	}
+	if dbPrefix == "" {
+		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_DB_PREFIX", dbPrefix)
+		dbPrefix = "/k6s/database"
+	}
 	cfg := client.Config{
 		Endpoints: []string{etcdEndpoint},
 		Transport: client.DefaultTransport,
@@ -33,38 +45,37 @@ type ETCDDatabases struct {
 	prefix string
 }
 
-var etcdDatabases = &ETCDDatabases{
-	kapi:   globalKapi,
-	prefix: dbPrefix,
-}
+var etcdDatabases = &ETCDDatabases{}
 
 func GetETCDDatabases() *ETCDDatabases {
+	etcdDatabases.kapi = globalKapi
+	etcdDatabases.prefix = dbPrefix
 	return etcdDatabases
 }
 
-func (dbs *ETCDDatabases) Add(name string, db Database) error {
+func (dbs *ETCDDatabases) Add(name string, db Database, ctx iris.Context) error {
 	dbBytes, err := json.MarshalIndent(db, "", " ")
 	if err != nil {
 		return err
 	}
 	// eg. key==/k6s/database/mysql-xxx
-	resp, err := dbs.kapi.Set(context.Background(), fmt.Sprintf("%s/%s", dbs.prefix, name), string(dbBytes), nil)
+	key := fmt.Sprintf("%s/%s", dbs.prefix, name)
+	_, err = dbs.kapi.Set(context.Background(), key, string(dbBytes), nil)
 	if err != nil {
 		return err
 	}
-	// TODO(ht) print some log
-	_ = resp
+	ctx.Application().Logger().Infof("Add database to ETCDDatabases success: <%s>", name)
 	return nil
 }
 
-func (dbs *ETCDDatabases) Get(name string) (Database, bool) {
+func (dbs *ETCDDatabases) Get(name string, ctx iris.Context) (Database, bool) {
 	resp, err := dbs.kapi.Get(context.Background(), fmt.Sprintf("%s/%s", dbs.prefix, name), nil)
 	if err != nil {
-		// TODO(ht) add log
+		ctx.Application().Logger().Printf("Get database from ETCDDatabases failed: <%s>", err.Error())
 		return &GenericDatabase{}, false
 	}
 
-	var retDb *GenericDatabase
+	var retDb = new(GenericDatabase)
 	dbStr := resp.Node.Value
 	dbBytes := []byte(dbStr)
 	err = json.Unmarshal(dbBytes, retDb)

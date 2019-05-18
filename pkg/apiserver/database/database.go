@@ -4,29 +4,31 @@ import (
 	"github.com/kataras/iris"
 )
 
-type DatabaseStatus string // eg. running
+type DatabaseStatus string // eg. [ running, stopped, ... ]
 
-type DatabaseAction string // eg. install
+type DatabaseAction string // eg. [ install, stop, ... ]
 
 const (
-	// user can ask db's status to not-installed/running/stoped
+	// user can asks db's status to be not-installed/running/stopped and restart
+	// restart means running -> stopped -> running
 	NotInstalled DatabaseStatus = "not-installed"
 	Running      DatabaseStatus = "running"
-	Stopped      DatabaseStatus = "stoped"
-
-	// program set
+	Stopped      DatabaseStatus = "stopped"
+	// essentially not a status
 	Restart DatabaseStatus = "restart"
 
+	// failed and unknown is a real status will be happen, but user can't set itz
 	Failed  DatabaseStatus = "failed"
 	Unknown DatabaseStatus = "unknown"
 
-	// mid status is not in the DatabaseStatusMap
+	// middle status isn't need in the DatabaseStatusMap
 	Starting   DatabaseStatus = "starting"
 	Installing DatabaseStatus = "installing"
 	Stopping   DatabaseStatus = "stopping"
 	Restarting DatabaseStatus = "restarting"
 )
 
+// all action
 const (
 	AStart     DatabaseAction = "start"
 	AStop      DatabaseAction = "stop"
@@ -35,15 +37,17 @@ const (
 	AUninstall DatabaseAction = "uninstall"
 )
 
+// all status user can set
 var DatabaseStatusMap = map[DatabaseStatus]struct{}{
 	NotInstalled: {},
 	Running:      {},
 	Stopped:      {},
-	Restart:      {}, // it's a action, but we need it
+	Restart:      {}, // it's a action, but we need use it as a status
 	// Failed:       {}, // user won't set a app to failed
 	// Unknown:      {}, // user won't set a app to unknown
 }
 
+// all action
 var DatabaseActionMap = map[DatabaseAction]struct{}{
 	AStart:     {},
 	AStop:      {},
@@ -55,39 +59,16 @@ var DatabaseActionMap = map[DatabaseAction]struct{}{
 // Databases is used to store all database
 type Databases interface {
 	// Add a db to databases; If the db is already exist, return error
-	Add(name string, db Database) error
+	Add(name string, db Database, ctx iris.Context) error
 	// Get a db from databases; If the db is not exist, return {}, false
-	Get(name string) (Database, bool)
+	Get(name string, ctx iris.Context) (Database, bool)
 }
 
 // Database specify a database resource
 type Database interface {
 	UpdateStatus(action DatabaseAction, ctx iris.Context)
 	GetStatus() *Statusx
-	GetApp() *Appx
 	GetName() string
+	GetApp() *Appx
 	GetHosts() []Hostx
-}
-
-type Hostx struct {
-	IP       string `json:"ip"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type Appx struct {
-	RepoURL   string            `json:"repo_url"`  // http://192.168.19.101:8080/
-	Install   string            `json:"install"`   // install.sh
-	Start     string            `json:"start"`     // start.sh
-	Stop      string            `json:"stop"`      // stop.sh
-	Restart   string            `json:"restart"`   //restart.sh
-	Uninstall string            `json:"uninstall"` // uninstall.sh
-	Package   string            `json:"package"`   // mysql-5.7.tar.gz
-	Metadata  map[string]string `json:"metadata"`
-	Status    Statusx           `json:"status"`
-}
-
-type Statusx struct {
-	Expect   DatabaseStatus `json:"expect"`   // running
-	Realtime DatabaseStatus `json:"realtime"` // failed
 }

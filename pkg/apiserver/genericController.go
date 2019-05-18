@@ -13,7 +13,7 @@ import (
 func CreateDatabase(ctx iris.Context) {
 	var db database.GenericDatabase
 
-	// use request body init database
+	// apply request body to db
 	if err := ctx.ReadJSON(&db); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
@@ -39,8 +39,8 @@ func CreateDatabase(ctx iris.Context) {
 
 	db.GetApp().Metadata["CreateAt"] = time.Now().Format("2006-01-02 15:04:05")
 
-	//err := database.GetMemoryDatabases().Add(db.GetName(), &db)
-	err := database.GetETCDDatabases().Add(db.GetName(), &db)
+	// add a database to etcd databases
+	err := database.GetETCDDatabases().Add(db.GetName(), &db, ctx)
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.WriteString(err.Error())
@@ -76,11 +76,11 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 
 	// validate whether the db exists
 	//db, ok := database.GetMemoryDatabases().Get(dbName)
-	db, ok := database.GetETCDDatabases().Get(dbName)
+	db, ok := database.GetETCDDatabases().Get(dbName, ctx)
 	if !ok {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString("d_name is not exist: " + dbName)
-		ctx.Application().Logger().Errorf("d_name is not exist: %s" ,dbName)
+		ctx.Application().Logger().Errorf("d_name is not exist: %s", dbName)
 		return
 	}
 
@@ -144,7 +144,8 @@ func UpdateDatabaseStatus(ctx iris.Context) {
 
 func GetDatabaseStatus(ctx iris.Context) {
 	dbName := ctx.Params().GetString("d_name")
-	db, ok := database.GetMemoryDatabases().Get(dbName)
+	//db, ok := database.GetMemoryDatabases().Get(dbName)
+	db, ok := database.GetETCDDatabases().Get(dbName, ctx)
 	if !ok {
 		ctx.StatusCode(iris.StatusBadRequest)
 		msg := fmt.Sprintf("GenericDatabase with name <%s> is not exist: ", dbName)

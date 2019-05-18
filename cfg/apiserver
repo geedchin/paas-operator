@@ -1,0 +1,4 @@
+ETCD_ENDPOINT = 'http://127.0.0.1:2379'
+ETCD_DB_PREFIX = '/k6s/database'
+APISERVER_WORK_DIR = '/opt/app/'
+AGENT_PORT = '3335'

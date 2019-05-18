@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -15,10 +17,26 @@ import (
 	"github.com/farmer-hutao/k6s/pkg/apiserver/utils/sshcli"
 )
 
-const (
-	WORK_DIR       = "/opt/app/"
-	AGENT_ZIP_NAME = "agent.tar.gz"
+var (
+	WORK_DIR       = os.Getenv("APISERVER_WORK_DIR")
+	AGENT_ZIP_NAME = os.Getenv("AGENT_ZIP_NAME")
+	AGENT_PORT     = os.Getenv("AGENT_PORT")
 )
+
+func init() {
+	if WORK_DIR == "" {
+		log.Printf("Warning: %s is unset, use default value: %s", "APISERVER_WORK_DIR", WORK_DIR)
+		WORK_DIR = "/opt/app/"
+	}
+	if AGENT_ZIP_NAME == "" {
+		log.Printf("Warning: %s is unset, use default value: %s", "AGENT_ZIP_NAME", AGENT_ZIP_NAME)
+		AGENT_ZIP_NAME = "agent.tar.gz"
+	}
+	if AGENT_PORT == "" {
+		log.Printf("Warning: %s is unset, use default value: %s", "AGENT_PORT", AGENT_PORT)
+		AGENT_PORT = "3335"
+	}
+}
 
 // GenericDatabase is a generic implement of Database interface
 type GenericDatabase struct {
@@ -28,11 +46,34 @@ type GenericDatabase struct {
 	App  Appx    `json:"app"`
 }
 
+type Hostx struct {
+	IP       string `json:"ip"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type Appx struct {
+	RepoURL   string            `json:"repo_url"`  // http://192.168.19.101:8080/
+	Install   string            `json:"install"`   // install.sh
+	Start     string            `json:"start"`     // start.sh
+	Stop      string            `json:"stop"`      // stop.sh
+	Restart   string            `json:"restart"`   // restart.sh
+	Uninstall string            `json:"uninstall"` // uninstall.sh
+	Package   string            `json:"package"`   // mysql-5.7.tar.gz
+	Metadata  map[string]string `json:"metadata"`
+	Status    Statusx           `json:"status"`
+}
+
+type Statusx struct {
+	Expect   DatabaseStatus `json:"expect"`   // running
+	Realtime DatabaseStatus `json:"realtime"` // failed
+}
+
 func (d *GenericDatabase) UpdateStatus(action DatabaseAction, ctx iris.Context) {
 	ctx.Application().Logger().Infof("The database with name <%s> start update status; "+
 		"expect status: <%s>; realtime status: <%s>;", d.Name, d.App.Status.Expect, d.App.Status.Realtime)
 
-	// TODO(ht) 考虑并发
+	// TODO(ht) consider concurrency
 	defer func() {
 		err := GetETCDDatabases().Add(d.GetName(), d)
 		if err != nil {
@@ -98,12 +139,15 @@ func (d *GenericDatabase) GetHosts() []Hostx {
 }
 
 func InitAgent(ip, username, password string, ctx iris.Context) error {
+	var tmpDir = "/tmp/"
+	var sshPort = "22"
+
 	ctx.Application().Logger().Info("start to init agent!!!")
 
 	agentTarPath := filepath.Join(WORK_DIR, AGENT_ZIP_NAME)
-	tmpTarPath := filepath.Join("/tmp/", AGENT_ZIP_NAME)
+	tmpTarPath := filepath.Join(tmpDir, AGENT_ZIP_NAME)
 
-	sshCli := sshcli.New(ip, username, password, "22")
+	sshCli := sshcli.New(ip, username, password, sshPort)
 	if err := sshCli.ValidateConn(); err != nil {
 		ctx.Application().Logger().Error(err)
 		return err
@@ -118,6 +162,7 @@ func InitAgent(ip, username, password string, ctx iris.Context) error {
 
 	// start agent
 	cmd := fmt.Sprintf("mkdir %s && tar -xzvf %s -C %s && sh %sagent/agent.sh", WORK_DIR, tmpTarPath, WORK_DIR, WORK_DIR)
+	ctx.Application().Logger().Infof("Prepare to exec cmd: %s", cmd)
 	result, err := sshCli.ExecCmd(cmd)
 	ctx.Application().Logger().Infof("Exec cmd: <%s> get result: <%s>", cmd, result)
 	if err != nil {
@@ -128,7 +173,7 @@ func InitAgent(ip, username, password string, ctx iris.Context) error {
 }
 
 func CallToAgent(action DatabaseAction, db *GenericDatabase, ctx iris.Context) error {
-	var agentUrlPrefix = "http://" + db.GetHosts()[0].IP + ":3335/"
+	var agentUrlPrefix = fmt.Sprintf("http://%s:%s/", db.GetHosts()[0].IP, AGENT_PORT)
 	var agentUrl = agentUrlPrefix + string(action)
 
 	ctx.Application().Logger().Infof("call to agent: %s", agentUrl)

@@ -2,6 +2,7 @@ package apiserver
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -49,6 +50,7 @@ func newLogFile(path string) *os.File {
 	}
 
 	filename := todayFilename()
+	log.Println("logfile: " + filename)
 
 	//create log dir
 	if err := os.MkdirAll(path, 0666); err != nil {

@@ -1,0 +1,3 @@
+AGENT_WORK_DIR = '/opt/app/'
+AGENT_ZIP_NAME = 'agent.tar.gz'
+AGENT_PORT = '3335'
