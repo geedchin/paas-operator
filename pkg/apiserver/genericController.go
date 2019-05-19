@@ -29,6 +29,15 @@ func CreateDatabase(ctx iris.Context) {
 		return
 	}
 
+	// validate database is already exist
+	if _, ok := database.GetETCDDatabases().Get(db.GetName(), ctx); ok {
+		ctx.StatusCode(iris.StatusBadRequest)
+		msg := fmt.Sprintf("CreateDatabase Failed, the db with name <%s> is already exist.", db.GetName())
+		ctx.WriteString(msg)
+		ctx.Application().Logger().Error(msg)
+		return
+	}
+
 	// init database status if it is empty
 	if db.GetApp().Status.Expect == "" {
 		db.GetApp().Status.Expect = database.NotInstalled

@@ -90,13 +90,12 @@ func (dbs *ETCDDatabases) Get(name string, ctx iris.Context) (Database, bool) {
 
 func (dbs *ETCDDatabases) Delete(name string, ctx iris.Context) (Database, error) {
 	key := fmt.Sprintf("%s/%s", dbs.prefix, name)
-	resp, err := dbs.kapi.Delete(context.Background(), key, nil)
+	resp, err := dbs.kapi.Get(context.Background(), key, nil)
+	// not exist, return nil, nil
 	if err != nil {
-		ctx.Application().Logger().Errorf("Delete database from ETCDDatabases failed: <%s>", err.Error())
-		return nil, err
+		ctx.Application().Logger().Errorf("Delete database from ETCDDatabases failed when query db: <%s>", err.Error())
+		return nil, nil
 	}
-
-	ctx.Application().Logger().Infof("Delete database <%s> successful.", name)
 
 	var retDb = new(GenericDatabase)
 	dbStr := resp.Node.Value
@@ -106,6 +105,14 @@ func (dbs *ETCDDatabases) Delete(name string, ctx iris.Context) (Database, error
 		ctx.Application().Logger().Errorf("Delete db <%s>, json unmarshal failed: <%s>", name, err.Error())
 		return nil, err
 	}
+
+	resp, err = dbs.kapi.Delete(context.Background(), key, nil)
+	if err != nil {
+		ctx.Application().Logger().Errorf("Delete database from ETCDDatabases failed: <%s>", err.Error())
+		return nil, err
+	}
+
+	ctx.Application().Logger().Infof("Delete database <%s> successful.", name)
 
 	return retDb, nil
 }

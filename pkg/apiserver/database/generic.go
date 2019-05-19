@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -75,7 +76,7 @@ func (d *GenericDatabase) UpdateStatus(action DatabaseAction, ctx iris.Context) 
 
 	// TODO(ht) consider concurrency
 	defer func() {
-		err := GetETCDDatabases().Add(d.GetName(), d)
+		err := GetETCDDatabases().Add(d.GetName(), d, ctx)
 		if err != nil {
 			ctx.Application().Logger().Errorf("Got some error: %s", err.Error())
 		}
@@ -199,15 +200,25 @@ func CallToAgent(action DatabaseAction, db *GenericDatabase, ctx iris.Context) e
 		return err
 	}
 
-	resp, err := http.Post(agentUrl, "application/json;charset=utf-8", bytes.NewBuffer([]byte(jsonBody)))
+	ctx.Application().Logger().Infof("Call to agent with body:\n%s", string(jsonBody))
+
+	resp, err := http.Post(agentUrl, "application/json;charset=utf-8", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		ctx.Application().Logger().Error(err)
 		return err
 	}
 
 	if resp.StatusCode != 200 {
-		ctx.Application().Logger().Errorf("Result code != 200: %s", resp.Status)
-		return errors.New(resp.Status)
+		// TODO(ht) add buf
+		var bodyBytes = make([]byte, 512)
+		n, err := resp.Body.Read(bodyBytes)
+		if err != nil && err != io.EOF {
+			ctx.Application().Logger().Errorf("Read resp failed: <%s>", err.Error())
+			return err
+		}
+		errMsg := fmt.Sprintf("status: <%s>; msg: <%s>", resp.Status, string(bodyBytes[0:n]))
+		ctx.Application().Logger().Errorf("Result code != 200: %s", errMsg)
+		return errors.New(errMsg)
 	}
 	return nil
 }
