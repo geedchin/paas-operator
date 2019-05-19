@@ -62,6 +62,12 @@ type Databases interface {
 	Add(name string, db Database, ctx iris.Context) error
 	// Get a db from databases; If the db is not exist, return {}, false
 	Get(name string, ctx iris.Context) (Database, bool)
+	// Delete a db from databases; If the db is exist, return the db and nil, else return nil and nil
+	// if some error occur, return nil and the error
+	// 1. db exist, delete success -> return (db, nil)
+	// 2. db not exist -> return (nil, nil)
+	// 3. some error occur -> return (nil, err)
+	Delete(name string, ctx iris.Context) (Database, error)
 }
 
 // Database specify a database resource

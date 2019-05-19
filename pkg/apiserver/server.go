@@ -34,12 +34,14 @@ func applyRoute(app *iris.Application) {
 	versionRouter := app.Party("/apis/v1alpha1")
 	dbRouter := versionRouter.Party("/database")
 
-	// 查询Database状态
+	// Query a database status
 	dbRouter.Get("/{d_name}/status", GetDatabaseStatus)
-	// 创建Database资源
+	// Create a database
 	dbRouter.Post("/create", CreateDatabase)
-	// 修改Database的期望状态，status-> running/stoped/not-installed
+	// Update a database's expect status, status -> [ running、stopped、not-installed ]
 	dbRouter.Put("/{d_name:string}/{status:string}", UpdateDatabaseStatus)
+	// Delete a database by name
+	dbRouter.Delete("/{d_name}", DeleteDatabase)
 }
 
 // eg. path=/var/log ->

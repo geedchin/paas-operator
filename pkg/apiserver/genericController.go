@@ -170,3 +170,25 @@ func GetDatabaseStatus(ctx iris.Context) {
 	ctx.StatusCode(iris.StatusOK)
 	return
 }
+
+func DeleteDatabase(ctx iris.Context) {
+	dbName := ctx.Params().GetString("d_name")
+	ctx.Application().Logger().Infof("Prepare to delete a db named <%s>", dbName)
+
+	db, err := database.GetETCDDatabases().Delete(dbName, ctx)
+	if err != nil {
+		ctx.StatusCode(iris.StatusInternalServerError)
+		ctx.WriteString("got some error")
+		ctx.Application().Logger().Errorf("Failed to delete a db <%s>.", dbName)
+		return
+	}
+
+	if db == nil {
+		ctx.StatusCode(iris.StatusOK)
+		ctx.WriteString("db not exist")
+		return
+	}
+
+	ctx.StatusCode(iris.StatusOK)
+	ctx.WriteString(db.GetName())
+}

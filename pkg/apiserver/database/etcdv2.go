@@ -62,6 +62,7 @@ func (dbs *ETCDDatabases) Add(name string, db Database, ctx iris.Context) error 
 	key := fmt.Sprintf("%s/%s", dbs.prefix, name)
 	_, err = dbs.kapi.Set(context.Background(), key, string(dbBytes), nil)
 	if err != nil {
+		ctx.Application().Logger().Errorf("Add db <%s> to etcd failed. with error: <%s>", name, err.Error())
 		return err
 	}
 	ctx.Application().Logger().Infof("Add database to ETCDDatabases success: <%s>", name)
@@ -69,9 +70,10 @@ func (dbs *ETCDDatabases) Add(name string, db Database, ctx iris.Context) error 
 }
 
 func (dbs *ETCDDatabases) Get(name string, ctx iris.Context) (Database, bool) {
-	resp, err := dbs.kapi.Get(context.Background(), fmt.Sprintf("%s/%s", dbs.prefix, name), nil)
+	key := fmt.Sprintf("%s/%s", dbs.prefix, name)
+	resp, err := dbs.kapi.Get(context.Background(), key, nil)
 	if err != nil {
-		ctx.Application().Logger().Printf("Get database from ETCDDatabases failed: <%s>", err.Error())
+		ctx.Application().Logger().Errorf("Get database from ETCDDatabases failed: <%s>", err.Error())
 		return &GenericDatabase{}, false
 	}
 
@@ -80,7 +82,30 @@ func (dbs *ETCDDatabases) Get(name string, ctx iris.Context) (Database, bool) {
 	dbBytes := []byte(dbStr)
 	err = json.Unmarshal(dbBytes, retDb)
 	if err != nil {
+		ctx.Application().Logger().Errorf("Get db <%s>, json unmarshal failed: <%s>", name, err.Error())
 		return &GenericDatabase{}, false
 	}
 	return retDb, true
+}
+
+func (dbs *ETCDDatabases) Delete(name string, ctx iris.Context) (Database, error) {
+	key := fmt.Sprintf("%s/%s", dbs.prefix, name)
+	resp, err := dbs.kapi.Delete(context.Background(), key, nil)
+	if err != nil {
+		ctx.Application().Logger().Errorf("Delete database from ETCDDatabases failed: <%s>", err.Error())
+		return nil, err
+	}
+
+	ctx.Application().Logger().Infof("Delete database <%s> successful.", name)
+
+	var retDb = new(GenericDatabase)
+	dbStr := resp.Node.Value
+	dbBytes := []byte(dbStr)
+	err = json.Unmarshal(dbBytes, retDb)
+	if err != nil {
+		ctx.Application().Logger().Errorf("Delete db <%s>, json unmarshal failed: <%s>", name, err.Error())
+		return nil, err
+	}
+
+	return retDb, nil
 }
