@@ -59,4 +59,3 @@ func (ai *AppInfo) Print() string {
 	}
 	return string(bytes)
 }
-
