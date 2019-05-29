@@ -44,7 +44,7 @@ func (s *SSHClient) ValidateConn() error {
 	cliCfg = &ssh.ClientConfig{
 		User:    s.Username,
 		Auth:    auth,
-		Timeout: 1 * time.Minute,
+		Timeout: 10 * time.Second,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
 		},

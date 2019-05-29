@@ -78,3 +78,10 @@ type Database interface {
 	GetApp() *Appx
 	GetHosts() []Hostx
 }
+
+type EventLog interface {
+	// GetEvents returns all events with a resource
+	GetEvents() []map[string]string
+	// AddEvent add a event with a resource to events
+	AddEvent(map[string]string, iris.Context) (bool, error)
+}

@@ -1,0 +1,39 @@
+{
+  "name": "mysql-5.7-192.168.19.100",
+  "host": [
+    {
+      "ip": "192.168.19.100",
+      "// auth": "if only one username & password set, use it anywhere; if two, use the first to run the agent and another to ssh connect.",
+      "auth": [
+        {
+          "username": "root",
+          "password": "root123"
+        },
+        {
+          "username": "sshuser",
+          "password": "ssh123"
+        }
+      ]
+    }
+  ],
+  "app": {
+    "repo_url": "http://192.168.19.200:123/ftp/software/mysql/5.7/",
+    "install": "install.sh",
+    "start": "start.sh",
+    "stop": "stop.sh",
+    "restart": "restart.sh",
+    "uninstall": "uninstall.sh",
+    "package": "mysql-5.7.tar.gz",
+    "metadata": {
+      "APP_USER": "mysql",
+      "APP_PASSWD": "MYSQL123",
+      "// CreateAt": "it's set by program.",
+      "CreateAt": "2019-05-29 10:33:55"
+    },
+    "// status": "if set status at create time, program will use it for ease of testing.",
+    "status": {
+      "expect": "not-installed",
+      "realtime": "not-installed"
+    }
+  }
+}

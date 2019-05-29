@@ -1,0 +1,17 @@
+{
+  "repo_url": "http://192.168.19.200:123/ftp/software/mysql/5.7/",
+  "install": "install.sh",
+  "start": "start.sh",
+  "stop": "stop.sh",
+  "restart": "restart.sh",
+  "uninstall": "uninstall.sh",
+  "package": "mysql-5.7.tar.gz",
+  "metadata": {
+    "// repo_url and package": "REPO_URL & PACKAGE are copy of repo_url & package, because they may needed by scripts",
+    "REPO_URL": "http://192.168.19.200:123/ftp/software/mysql/5.7/",
+    "PACKAGE": "mysql-5.7.tar.gz",
+    "// env below": "they are set by who written scripts, because only that person know what env needed by scripts.",
+    "APP_USER": "mysql",
+    "APP_PASSWD": "MYSQL123"
+  }
+}
