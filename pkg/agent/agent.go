@@ -3,18 +3,35 @@ package agent
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func NewGinEngine() *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
+
+	// LoggerWithFormatter middleware will write the logs to gin.DefaultWriter
+	// By default gin.DefaultWriter = os.Stdout
+	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+
+		// your custom format
+		return fmt.Sprintf("[%s] \"%s %s %d %s \n",
+			param.TimeStamp.Format(time.StampMilli),
+			param.Method,
+			param.Path,
+			param.StatusCode,
+			param.Latency,
+		)
+	}))
+	r.Use(gin.Recovery())
 
 	// for test only
 	r.GET("/ping", func(c *gin.Context) {
@@ -174,7 +191,7 @@ func execInLinux(cmdName, execPath string, params []string) error {
 	errReader := bufio.NewReader(stderr)
 	printLog := func(reader *bufio.Reader) {
 		for {
-			line, err := outReader.ReadString('\n')
+			line, err := reader.ReadString('\n')
 			if err != nil || err == io.EOF {
 				break
 			}
