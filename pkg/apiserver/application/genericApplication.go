@@ -1,4 +1,4 @@
-package database
+package application
 
 import (
 	"bytes"
@@ -40,10 +40,11 @@ func init() {
 	}
 }
 
-// GenericDatabase is a generic implement of Database interface
-type GenericDatabase struct {
+// GenericApplication is a generic implement of Application interface
+type GenericApplication struct {
 	// mysql-5.7-xxx-192.168.19.100
 	Name  string  `json:"name"`
+	Type  string  `json:"type"`
 	Host  []Hostx `json:"host"`
 	App   Appx    `json:"app"`
 	Event Eventx  `json:"event"`
@@ -72,8 +73,8 @@ type Appx struct {
 }
 
 type Statusx struct {
-	Expect   DatabaseStatus `json:"expect"`   // running
-	Realtime DatabaseStatus `json:"realtime"` // failed
+	Expect   ApplicationStatus `json:"expect"`   // running
+	Realtime ApplicationStatus `json:"realtime"` // failed
 }
 
 // event saves all key log print with script in vm.
@@ -85,13 +86,15 @@ type Statusx struct {
 // ]
 type Eventx []map[string]string
 
-func (d *GenericDatabase) UpdateStatus(action DatabaseAction, ctx iris.Context) {
-	ctx.Application().Logger().Infof("The database with name <%s> start update status; "+
-		"expect status: <%s>; realtime status: <%s>;", d.Name, d.App.Status.Expect, d.App.Status.Realtime)
+func (a *GenericApplication) UpdateStatus(action ApplicationAction, ctx iris.Context) {
+	ctx.Application().Logger().Infof("The application with name <%s> start update status; "+
+		"expect status: <%s>; realtime status: <%s>;", a.Name, a.App.Status.Expect, a.App.Status.Realtime)
+
+	appType := AppType(a.Type)
 
 	// TODO(ht) consider concurrency
 	updateFn := func() {
-		err := GetETCDDatabases().Add(d.GetName(), d, ctx)
+		err := GetETCDApplications(appType).Add(a.GetName(), a, ctx)
 		if err != nil {
 			ctx.Application().Logger().Errorf("Got some error: %s", err.Error())
 		}
@@ -101,66 +104,66 @@ func (d *GenericDatabase) UpdateStatus(action DatabaseAction, ctx iris.Context) 
 
 	switch action {
 	case AInstall:
-		if err := InitAgent(d.Host[0].IP, d.Host[0].Auth, ctx); err != nil {
+		if err := InitAgent(a.Host[0].IP, a.Host[0].Auth, ctx); err != nil {
 			ctx.Application().Logger().Errorf("Init agent failed: <%s>", err.Error())
-			d.App.Status.Realtime = Failed
+			a.App.Status.Realtime = Failed
 			return
 		}
 		// wait the agent starting
 		time.Sleep(5 * time.Second)
-		if err := CallToAgent(AInstall, d, ctx); err != nil {
-			d.App.Status.Realtime = Failed
+		if err := CallToAgent(AInstall, a, ctx); err != nil {
+			a.App.Status.Realtime = Failed
 			return
 		}
-		d.App.Status.Realtime = Running
+		a.App.Status.Realtime = Running
 	case AStart:
-		if err := CallToAgent(AStart, d, ctx); err != nil {
-			d.App.Status.Realtime = Failed
+		if err := CallToAgent(AStart, a, ctx); err != nil {
+			a.App.Status.Realtime = Failed
 			return
 		}
-		d.App.Status.Realtime = Running
+		a.App.Status.Realtime = Running
 	case AStop:
-		if err := CallToAgent(AStop, d, ctx); err != nil {
-			d.App.Status.Realtime = Failed
+		if err := CallToAgent(AStop, a, ctx); err != nil {
+			a.App.Status.Realtime = Failed
 			return
 		}
-		d.App.Status.Realtime = Stopped
+		a.App.Status.Realtime = Stopped
 	case ARestart:
-		if err := CallToAgent(ARestart, d, ctx); err != nil {
-			d.App.Status.Realtime = Failed
+		if err := CallToAgent(ARestart, a, ctx); err != nil {
+			a.App.Status.Realtime = Failed
 			return
 		}
-		d.App.Status.Realtime = Running
+		a.App.Status.Realtime = Running
 	case AUninstall:
-		if err := CallToAgent(AUninstall, d, ctx); err != nil {
-			d.App.Status.Realtime = Failed
+		if err := CallToAgent(AUninstall, a, ctx); err != nil {
+			a.App.Status.Realtime = Failed
 			return
 		}
-		d.App.Status.Realtime = NotInstalled
+		a.App.Status.Realtime = NotInstalled
 	}
 }
 
-func (d *GenericDatabase) GetStatus() *Statusx {
-	return &d.App.Status
+func (a *GenericApplication) GetStatus() *Statusx {
+	return &a.App.Status
 }
 
-func (d *GenericDatabase) GetName() string {
-	return d.Name
+func (a *GenericApplication) GetName() string {
+	return a.Name
 }
 
-func (d *GenericDatabase) GetApp() *Appx {
-	return &d.App
+func (a *GenericApplication) GetApp() *Appx {
+	return &a.App
 }
 
-func (d *GenericDatabase) GetHosts() []Hostx {
-	return d.Host
+func (a *GenericApplication) GetHosts() []Hostx {
+	return a.Host
 }
 
-func (d *GenericDatabase) AddEvent(event map[string]string, ctx iris.Context) (bool, error) {
+func (a *GenericApplication) AddEvent(event map[string]string, ctx iris.Context) (bool, error) {
 	return false, nil
 }
 
-func (d *GenericDatabase) GetEvents() []map[string]string {
+func (a *GenericApplication) GetEvents() []map[string]string {
 	return nil
 }
 
@@ -233,28 +236,28 @@ func InitAgent(ip string, auth []Authx, ctx iris.Context) error {
 	return nil
 }
 
-func CallToAgent(action DatabaseAction, db *GenericDatabase, ctx iris.Context) error {
-	var agentUrlPrefix = fmt.Sprintf("http://%s:%s/", db.GetHosts()[0].IP, AGENT_PORT)
+func CallToAgent(action ApplicationAction, app *GenericApplication, ctx iris.Context) error {
+	var agentUrlPrefix = fmt.Sprintf("http://%s:%s/", app.GetHosts()[0].IP, AGENT_PORT)
 	var agentUrl = agentUrlPrefix + string(action)
 
 	ctx.Application().Logger().Infof("call to agent: %s", agentUrl)
 
 	var appInfo agent.AppInfo
 
-	appInfo.RepoURL = db.GetApp().RepoURL
-	appInfo.Install = db.GetApp().Install
-	appInfo.Start = db.GetApp().Start
-	appInfo.Stop = db.GetApp().Stop
-	appInfo.Restart = db.GetApp().Restart
-	appInfo.Uninstall = db.GetApp().Uninstall
-	appInfo.Package = db.GetApp().Package
-	appInfo.Metadata = db.GetApp().Metadata
+	appInfo.RepoURL = app.GetApp().RepoURL
+	appInfo.Install = app.GetApp().Install
+	appInfo.Start = app.GetApp().Start
+	appInfo.Stop = app.GetApp().Stop
+	appInfo.Restart = app.GetApp().Restart
+	appInfo.Uninstall = app.GetApp().Uninstall
+	appInfo.Package = app.GetApp().Package
+	appInfo.Metadata = app.GetApp().Metadata
 
 	// repo_url and package environment is needed by scripts.
-	if _, ok := db.GetApp().Metadata["REPO_URL"]; !ok {
+	if _, ok := app.GetApp().Metadata["REPO_URL"]; !ok {
 		appInfo.Metadata["REPO_URL"] = appInfo.RepoURL
 	}
-	if _, ok := db.GetApp().Metadata["PACKAGE"]; !ok {
+	if _, ok := app.GetApp().Metadata["PACKAGE"]; !ok {
 		appInfo.Metadata["PACKAGE"] = appInfo.Package
 	}
 

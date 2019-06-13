@@ -33,15 +33,25 @@ func Run() {
 func applyRoute(app *iris.Application) {
 	versionRouter := app.Party("/apis/v1alpha1")
 	dbRouter := versionRouter.Party("/database")
+	mwRouter := versionRouter.Party("/middleware")
 
 	// Query a database status
-	dbRouter.Get("/{d_name}/status", GetDatabaseStatus)
+	dbRouter.Get("/{a_name}/status", GetDatabaseStatus)
 	// Create a database
 	dbRouter.Post("/create", CreateDatabase)
 	// Update a database's expect status, status -> [ running、stopped、not-installed ]
-	dbRouter.Put("/{d_name:string}/{status:string}", UpdateDatabaseStatus)
+	dbRouter.Put("/{a_name:string}/{status:string}", UpdateDatabaseStatus)
 	// Delete a database by name
-	dbRouter.Delete("/{d_name}", DeleteDatabase)
+	dbRouter.Delete("/{a_name}", DeleteDatabase)
+
+	// Query a middleware status
+	mwRouter.Get("/{a_name}/status", GetMiddlewareStatus)
+	// Create a middleware
+	mwRouter.Post("/create", CreateMiddleware)
+	// Update a middleware's expect status, status -> [ running、stopped、not-installed ]
+	mwRouter.Put("/{a_name:string}/{status:string}", UpdateMiddlewareStatus)
+	// Delete a middleware by name
+	mwRouter.Delete("/{a_name}", DeleteMiddleware)
 }
 
 // eg. path=/var/log ->
