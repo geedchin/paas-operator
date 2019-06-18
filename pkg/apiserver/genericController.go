@@ -30,6 +30,11 @@ func DeleteDatabase(ctx iris.Context) {
 	deleteApplication(appType, ctx)
 }
 
+func SetDatabaseRealtimeStatus(ctx iris.Context) {
+	appType := application.APP_DATABASE
+	setApplicationRealtimeStatus(appType, ctx)
+}
+
 func CreateMiddleware(ctx iris.Context) {
 	appType := application.APP_MIDDLEWARE
 	createApplication(appType, ctx)
@@ -48,6 +53,11 @@ func GetMiddlewareStatus(ctx iris.Context) {
 func DeleteMiddleware(ctx iris.Context) {
 	appType := application.APP_MIDDLEWARE
 	deleteApplication(appType, ctx)
+}
+
+func SetMiddlewareRealtimeStatus(ctx iris.Context) {
+	appType := application.APP_MIDDLEWARE
+	setApplicationRealtimeStatus(appType, ctx)
 }
 
 func createApplication(appType application.AppType, ctx iris.Context) {
@@ -149,7 +159,6 @@ func updateApplicationStatus(appType application.AppType, ctx iris.Context) {
 
 	// update app resource status
 	switch expectStatus {
-
 	// TODO(ht): uninstall
 	case application.NotInstalled: // uninstall a application
 
@@ -243,4 +252,37 @@ func deleteApplication(appType application.AppType, ctx iris.Context) {
 
 	ctx.StatusCode(iris.StatusOK)
 	ctx.WriteString(app.GetName())
+}
+
+func setApplicationRealtimeStatus(appType application.AppType, ctx iris.Context) {
+	var appHealthy application.AppHealthy
+
+	// apply request body to app
+	if err := ctx.ReadJSON(&appHealthy); err != nil {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.WriteString(err.Error())
+		ctx.Application().Logger().Errorf("CreateAppHealthy Error, json is illegal: %s", err)
+		return
+	}
+
+	appName := ctx.Params().GetString("a_name")
+
+	var healthy = false
+	if appHealthy.Code == "0" {
+		healthy = true
+	}
+
+	app, ok := application.GetETCDApplications(appType).Get(appName, ctx)
+	if !ok {
+		ctx.StatusCode(iris.StatusBadRequest)
+		ctx.WriteString("app not exist")
+		return
+	}
+
+	expect := app.GetStatus().Expect
+
+	if expect == application.Running && !healthy {
+		app.SetStatus(application.ApplicationStatus(""), application.Failed, ctx)
+	}
+	ctx.StatusCode(iris.StatusAccepted)
 }

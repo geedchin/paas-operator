@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -10,10 +11,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+var once = &sync.Once{}
 
 func NewGinEngine() *gin.Engine {
 	r := gin.New()
@@ -73,7 +77,7 @@ func DoAction(c *gin.Context) {
 	log.Println("AppInfo: " + appInfo.Print())
 
 	// doAction get the Action & AppInfo, then exec a corresponding script.
-	doAction := func(action Action, appInfo *AppInfo) error {
+	doAction := func(action Action, appInfo *AppInfo) (*bytes.Buffer, error) {
 		// eg. [ install.sh, start.sh, ... ]
 		var scriptName string
 		var repoUrl = appInfo.RepoURL
@@ -89,18 +93,20 @@ func DoAction(c *gin.Context) {
 			scriptName = appInfo.Restart
 		case Uninstall:
 			scriptName = appInfo.Uninstall
+		case Check:
+			scriptName = appInfo.Check
 		}
 
 		//validate scriptName
 		if len(scriptName) < 1 {
-			return errors.New("script name illegal: " + scriptName)
+			return nil, errors.New("script name illegal: " + scriptName)
 		}
 
 		// prepare the script
 		scriptPath, err := getScriptIfNotExist(scriptName, repoUrl)
 		if err != nil {
 			log.Println("wget script failed: " + err.Error())
-			return err
+			return nil, err
 		}
 
 		// prepare args for script
@@ -109,15 +115,20 @@ func DoAction(c *gin.Context) {
 			args += k + "=" + v + " "
 		}
 
-		// exec the script
-		err = execInLinux("sh", WorkDir, []string{scriptPath, args})
-		if err != nil {
-			return err
+		if action == Check {
+			check(appInfo.Name, appInfo.Type, appInfo.OperatorIp, appInfo.OperatorPort, WorkDir, scriptPath, args)
+			return nil, nil
 		}
-		return nil
+
+		// exec the script
+		err = execInLinux("sh", WorkDir, []string{scriptPath, args}, nil)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
 	}
 
-	err := doAction(Action(action), &appInfo)
+	_, err := doAction(Action(action), &appInfo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -127,6 +138,43 @@ func DoAction(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"msg": "ok",
+	})
+}
+
+func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args string) {
+	var c = &http.Client{}
+
+	report := func(msg string) {
+		url := fmt.Sprintf("http://%s:%s/apis/v1alpha1/%s/%s/check", operatorIp, operatorPort, appType, name)
+		payload := bytes.NewBufferString(msg)
+		req, err := http.NewRequest("PUT", url, payload)
+		if err != nil {
+			log.Printf("Error: NewRequest failed: %s", err)
+			return
+		}
+		req.Header.Add("Content-Type", "application/json;charset=utf-8")
+		resp, err := c.Do(req)
+		if err != nil {
+			log.Printf("Error: Do Request failed: %s", err)
+			return
+		}
+		if resp.StatusCode != http.StatusAccepted {
+			log.Printf("Error: %s", resp.Status)
+		}
+	}
+
+	var buf bytes.Buffer
+	once.Do(func() {
+		go func() {
+			for {
+				err := execInLinux("sh", workdir, []string{scriptPath, args}, &buf)
+				if err != nil {
+					log.Printf("Exec check cmd failed: %s", err)
+				}
+				report(buf.String())
+				time.Sleep(5 * time.Second)
+			}
+		}()
 	})
 }
 
@@ -151,7 +199,7 @@ func getScriptIfNotExist(scriptName, repoUrl string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = execInLinux("wget", WorkDir, []string{repoUrl + scriptName})
+	err = execInLinux("wget", WorkDir, []string{repoUrl + scriptName}, nil)
 	if err != nil {
 		log.Println("Wget Failed!!!")
 		return "", err
@@ -172,7 +220,8 @@ func pathExists(path string) (bool, error) {
 }
 
 // execInLinux can exec a command with some params in linux system
-func execInLinux(cmdName, execPath string, params []string) error {
+// all log producted by script would be print to stdout and return at logsBuffer if logsBuffer is not nil
+func execInLinux(cmdName, execPath string, params []string, logsBuffer *bytes.Buffer) error {
 	cmd := exec.Command(cmdName, params...)
 	cmd.Dir = execPath
 
@@ -196,6 +245,9 @@ func execInLinux(cmdName, execPath string, params []string) error {
 				break
 			}
 			log.Println(line)
+			if logsBuffer != nil {
+				logsBuffer.WriteString(line)
+			}
 		}
 	}
 	go printLog(outReader)

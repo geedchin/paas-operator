@@ -86,6 +86,22 @@ func (apps *ETCDApplications) Add(name string, app Application, ctx iris.Context
 	return nil
 }
 
+func (apps *ETCDApplications) Update(name string, app Application, ctx iris.Context) error {
+	appBytes, err := json.MarshalIndent(app, "", " ")
+	if err != nil {
+		return err
+	}
+	// eg. key==/k6s/database/mysql-xxx
+	key := fmt.Sprintf("%s/%s", apps.prefix, name)
+	_, err = apps.kapi.Update(context.Background(), key, string(appBytes))
+	if err != nil {
+		ctx.Application().Logger().Errorf("Update app <%s> to etcd failed. with error: <%s>", name, err.Error())
+		return err
+	}
+	ctx.Application().Logger().Infof("Update application to ETCDApplications success: <%s>", name)
+	return nil
+}
+
 func (apps *ETCDApplications) Get(name string, ctx iris.Context) (Application, bool) {
 	key := fmt.Sprintf("%s/%s", apps.prefix, name)
 	resp, err := apps.kapi.Get(context.Background(), key, nil)

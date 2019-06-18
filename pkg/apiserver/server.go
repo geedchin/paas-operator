@@ -44,6 +44,9 @@ func applyRoute(app *iris.Application) {
 	// Delete a database by name
 	dbRouter.Delete("/{a_name}", DeleteDatabase)
 
+	// Set a database's realtime status
+	dbRouter.Put("/{a_name}/check", SetDatabaseRealtimeStatus)
+
 	// Query a middleware status
 	mwRouter.Get("/{a_name}/status", GetMiddlewareStatus)
 	// Create a middleware
@@ -52,6 +55,9 @@ func applyRoute(app *iris.Application) {
 	mwRouter.Put("/{a_name:string}/{status:string}", UpdateMiddlewareStatus)
 	// Delete a middleware by name
 	mwRouter.Delete("/{a_name}", DeleteMiddleware)
+
+	// Set a middleware's realtime status
+	mwRouter.Put("/{a_name}/check", SetMiddlewareRealtimeStatus)
 }
 
 // eg. path=/var/log ->

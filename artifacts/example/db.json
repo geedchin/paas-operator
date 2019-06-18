@@ -25,6 +25,7 @@
     "stop": "stop.sh",
     "restart": "restart.sh",
     "uninstall": "uninstall.sh",
+    "check": "check.sh",
     "package": "mysql-5.7.tar.gz",
     "metadata": {
       "APP_USER": "mysql",

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
 	"io"
 	"log"
 	"net/http"
@@ -16,6 +15,7 @@ import (
 	"github.com/kataras/iris"
 
 	"github.com/farmer-hutao/k6s/pkg/agent"
+	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
 	"github.com/farmer-hutao/k6s/pkg/apiserver/utils/sshcli"
 )
 
@@ -23,6 +23,8 @@ var (
 	WORK_DIR       = os.Getenv("APISERVER_WORK_DIR")
 	AGENT_ZIP_NAME = os.Getenv("AGENT_ZIP_NAME")
 	AGENT_PORT     = os.Getenv("AGENT_PORT")
+	OPERATOR_IP    = os.Getenv("OPERATOR_IP")
+	OPERATOR_PORT  = os.Getenv("OPERATOR_PORT")
 )
 
 func init() {
@@ -37,6 +39,14 @@ func init() {
 	if AGENT_PORT == "" {
 		log.Printf("Warning: %s is unset, use default value: %s", "AGENT_PORT", AGENT_PORT)
 		AGENT_PORT = "3335"
+	}
+	if OPERATOR_IP == "" {
+		log.Printf("Warning: %s is unset, use default value: %s", "OPERATOR_IP", OPERATOR_IP)
+		OPERATOR_IP = "127.0.0.1"
+	}
+	if OPERATOR_PORT == "" {
+		log.Printf("Warning: %s is unset, use default value: %s", "OPERATOR_PORT", OPERATOR_PORT)
+		OPERATOR_PORT = "3334"
 	}
 }
 
@@ -67,6 +77,7 @@ type Appx struct {
 	Stop      string            `json:"stop"`      // stop.sh
 	Restart   string            `json:"restart"`   // restart.sh
 	Uninstall string            `json:"uninstall"` // uninstall.sh
+	Check     string            `json:"check"`     // check.sh
 	Package   string            `json:"package"`   // mysql-5.7.tar.gz
 	Metadata  map[string]string `json:"metadata"`
 	Status    Statusx           `json:"status"`
@@ -86,6 +97,15 @@ type Statusx struct {
 // ]
 type Eventx []map[string]string
 
+//{
+//	  "code": "0",
+//	  "msg": "some message"
+//}
+type AppHealthy struct {
+	Code string `json:"code"`
+	Msg  string `json:"msg"`
+}
+
 func (a *GenericApplication) UpdateStatus(action ApplicationAction, ctx iris.Context) {
 	ctx.Application().Logger().Infof("The application with name <%s> start update status; "+
 		"expect status: <%s>; realtime status: <%s>;", a.Name, a.App.Status.Expect, a.App.Status.Realtime)
@@ -94,7 +114,7 @@ func (a *GenericApplication) UpdateStatus(action ApplicationAction, ctx iris.Con
 
 	// TODO(ht) consider concurrency
 	updateFn := func() {
-		err := GetETCDApplications(appType).Add(a.GetName(), a, ctx)
+		err := GetETCDApplications(appType).Update(a.GetName(), a, ctx)
 		if err != nil {
 			ctx.Application().Logger().Errorf("Got some error: %s", err.Error())
 		}
@@ -104,6 +124,14 @@ func (a *GenericApplication) UpdateStatus(action ApplicationAction, ctx iris.Con
 
 	switch action {
 	case AInstall:
+		defer func() {
+			err := CallToAgent(ACheck, a, ctx)
+			if err != nil {
+				ctx.Application().Logger().Errorf("Call to agent to start check failed: <%s>", err)
+			}
+			ctx.Application().Logger().Info("Call to agent to start check success")
+		}()
+
 		if err := InitAgent(a.Host[0].IP, a.Host[0].Auth, ctx); err != nil {
 			ctx.Application().Logger().Errorf("Init agent failed: <%s>", err.Error())
 			a.App.Status.Realtime = Failed
@@ -145,6 +173,26 @@ func (a *GenericApplication) UpdateStatus(action ApplicationAction, ctx iris.Con
 
 func (a *GenericApplication) GetStatus() *Statusx {
 	return &a.App.Status
+}
+
+func (a *GenericApplication) SetStatus(expect, realtime ApplicationStatus, ctx iris.Context) {
+	appType := AppType(a.Type)
+
+	// TODO(ht) consider concurrency
+	updateFn := func() {
+		err := GetETCDApplications(appType).Update(a.GetName(), a, ctx)
+		if err != nil {
+			ctx.Application().Logger().Errorf("Got some error: %s", err.Error())
+		}
+	}
+	defer updateFn()
+
+	if len(expect) > 0 {
+		a.App.Status.Expect = expect
+	}
+	if len(realtime) > 0 {
+		a.App.Status.Realtime = realtime
+	}
 }
 
 func (a *GenericApplication) GetName() string {
@@ -194,8 +242,8 @@ func InitAgent(ip string, auth []Authx, ctx iris.Context) error {
 
 	ctx.Application().Logger().Info("start to init agent!!!")
 
-	agentTarPath := filepath.Join(WORK_DIR, AGENT_ZIP_NAME)
-	tmpTarPath := filepath.Join(tmpDir, AGENT_ZIP_NAME)
+	localAgentTarPath := filepath.Join(WORK_DIR, AGENT_ZIP_NAME)
+	remoteTmpTarPath := filepath.Join(tmpDir, AGENT_ZIP_NAME)
 
 	sshCli := sshcli.New(ip, sshUser, sshPasswd, sshPort)
 	// max -> 10 minutes = 30*20s
@@ -218,14 +266,14 @@ func InitAgent(ip string, auth []Authx, ctx iris.Context) error {
 	defer sshCli.Cli.Close()
 
 	// upload
-	if err := sshCli.UploadFile(agentTarPath, tmpTarPath); err != nil {
+	if err := sshCli.UploadFile(localAgentTarPath, remoteTmpTarPath); err != nil {
 		ctx.Application().Logger().Error(err)
 		return err
 	}
 
 	// start agent
-	doWithSuCmd := fmt.Sprintf("cat %s > dowithsu.sh && ./dowithsu.sh %s %s", utils.DoWithSu, agentUser, agentPasswd)
-	cmd := fmt.Sprintf("mkdir %s && tar -xzvf %s -C %s && %s 'sh %sagent/agent.sh'", WORK_DIR, tmpTarPath, WORK_DIR, doWithSuCmd, WORK_DIR)
+	doWithSuCmd := fmt.Sprintf("echo '%s' > dowithsu.sh && chmod +x dowithsu.sh && ./dowithsu.sh %s %s", utils.DoWithSu, agentUser, agentPasswd)
+	cmd := fmt.Sprintf("tar -xzvf %s -C %s && %s 'sh %sagent/agent.sh'", remoteTmpTarPath, tmpDir, doWithSuCmd, tmpDir)
 	ctx.Application().Logger().Infof("Prepare to exec cmd: %s", cmd)
 	result, err := sshCli.ExecCmd(cmd)
 	ctx.Application().Logger().Infof("Exec cmd: <%s> get result: <%s>", cmd, result)
@@ -244,6 +292,10 @@ func CallToAgent(action ApplicationAction, app *GenericApplication, ctx iris.Con
 
 	var appInfo agent.AppInfo
 
+	appInfo.Name = app.GetName()
+	appInfo.Type = app.Type
+	appInfo.OperatorIp = OPERATOR_IP
+	appInfo.OperatorPort = OPERATOR_PORT
 	appInfo.RepoURL = app.GetApp().RepoURL
 	appInfo.Install = app.GetApp().Install
 	appInfo.Start = app.GetApp().Start

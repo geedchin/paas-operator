@@ -8,7 +8,6 @@ type ApplicationStatus string // eg. [ running, stopped, ... ]
 
 type ApplicationAction string // eg. [ install, stop, ... ]
 
-
 type AppType string
 
 const (
@@ -43,6 +42,7 @@ const (
 	AInstall   ApplicationAction = "install"
 	ARestart   ApplicationAction = "restart"
 	AUninstall ApplicationAction = "uninstall"
+	ACheck     ApplicationAction = "check"
 )
 
 // all status user can set
@@ -62,15 +62,18 @@ var ApplicationActionMap = map[ApplicationAction]struct{}{
 	AInstall:   {},
 	ARestart:   {},
 	AUninstall: {},
+	ACheck:     {},
 }
 
 // Applications is used to store all Application
 type Applications interface {
-	// Add a app to Applications; If the app is already exist, return error
+	// Add an app to Applications; If the app is already exist, return error
 	Add(name string, app Application, ctx iris.Context) error
-	// Get a app from Applications; If the app is not exist, return {}, false
+	// Update an app in Applications; If some error occur, return the error
+	Update(name string, app Application, ctx iris.Context) error
+	// Get an app from Applications; If the app is not exist, return {}, false
 	Get(name string, ctx iris.Context) (Application, bool)
-	// Delete a app from Applications; If the app is exist, return the app and nil, else return nil and nil
+	// Delete an app from Applications; If the app is exist, return the app and nil, else return nil and nil
 	// if some error occur, return nil and the error
 	// 1. app exist, delete success -> return (app, nil)
 	// 2. app not exist -> return (nil, nil)
@@ -81,6 +84,7 @@ type Applications interface {
 // Application specify a Application resource
 type Application interface {
 	UpdateStatus(action ApplicationAction, ctx iris.Context)
+	SetStatus(expect, realtime ApplicationStatus, ctx iris.Context)
 	GetStatus() *Statusx
 	GetName() string
 	GetApp() *Appx

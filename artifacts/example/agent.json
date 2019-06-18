@@ -1,4 +1,6 @@
 {
+  "name": "mysql-5.7-192.168.19.100",
+  "operator_ip": "192.168.19.300",
   "repo_url": "http://192.168.19.200:123/ftp/software/mysql/5.7/",
   "install": "install.sh",
   "start": "start.sh",

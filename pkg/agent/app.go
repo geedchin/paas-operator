@@ -14,6 +14,7 @@ const (
 	Stop      Action = "stop"
 	Restart   Action = "restart"
 	Uninstall Action = "uninstall"
+	Check     Action = "check"
 )
 
 var ActionMap = map[Action]struct{}{
@@ -22,6 +23,7 @@ var ActionMap = map[Action]struct{}{
 	Stop:      {},
 	Restart:   {},
 	Uninstall: {},
+	Check:     {},
 }
 
 var WorkDir = "/opt/app/"
@@ -35,13 +37,18 @@ func init() {
 
 // AppInfo include all info the agent will use to control a app.
 type AppInfo struct {
-	RepoURL   string `json:"repo_url"`
-	Install   string `json:"install"`
-	Start     string `json:"start"`
-	Stop      string `json:"stop"`
-	Restart   string `json:"restart"`
-	Uninstall string `json:"uninstall"`
-	Package   string `json:"package"`
+	Name         string `json:"name"`
+	Type         string `json:"type"`
+	OperatorIp   string `json:"operator_ip"`
+	OperatorPort string `json:"operator_port"`
+	RepoURL      string `json:"repo_url"`
+	Install      string `json:"install"`
+	Start        string `json:"start"`
+	Stop         string `json:"stop"`
+	Restart      string `json:"restart"`
+	Uninstall    string `json:"uninstall"`
+	Check        string `json:"check"`
+	Package      string `json:"package"`
 	// all metadata will inject to script as a param, like:
 	// for k, v := range appInfo.Metadata {
 	//	  args += k + "=" + v + " "
