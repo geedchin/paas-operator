@@ -8,6 +8,7 @@ import (
 	"github.com/kataras/iris"
 
 	"github.com/farmer-hutao/k6s/pkg/apiserver/application"
+	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
 )
 
 func CreateDatabase(ctx iris.Context) {
@@ -255,17 +256,33 @@ func deleteApplication(appType application.AppType, ctx iris.Context) {
 }
 
 func setApplicationRealtimeStatus(appType application.AppType, ctx iris.Context) {
-	var appHealthy application.AppHealthy
+	appName := ctx.Params().GetString("a_name")
+
+	var appHealthy utils.AppHealthy
+
+	//reqBody, err := ctx.Request().GetBody()
+	//if err != nil {
+	//	ctx.StatusCode(iris.StatusBadRequest)
+	//	ctx.WriteString(err.Error())
+	//	ctx.Application().Logger().Errorf("Get body failed: %s", err)
+	//	return
+	//}
 
 	// apply request body to app
 	if err := ctx.ReadJSON(&appHealthy); err != nil {
 		ctx.StatusCode(iris.StatusBadRequest)
 		ctx.WriteString(err.Error())
 		ctx.Application().Logger().Errorf("CreateAppHealthy Error, json is illegal: %s", err)
+		ctx.Application().Logger().Errorf("Request app info: %s", appName)
+
+		//bodyBytes, err := ioutil.ReadAll(reqBody)
+		//if err != nil {
+		//	ctx.Application().Logger().Errorf("Get request body failed: %s", err)
+		//	return
+		//}
+		//ctx.Application().Logger().Errorf("Get request body: %s", string(bodyBytes))
 		return
 	}
-
-	appName := ctx.Params().GetString("a_name")
 
 	var healthy = false
 	if appHealthy.Code == "0" {

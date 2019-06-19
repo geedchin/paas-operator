@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
 )
 
 var once = &sync.Once{}
@@ -105,7 +107,7 @@ func DoAction(c *gin.Context) {
 		// prepare the script
 		scriptPath, err := getScriptIfNotExist(scriptName, repoUrl)
 		if err != nil {
-			log.Println("wget script failed: " + err.Error())
+			log.Println("Get script failed: " + err.Error())
 			return nil, err
 		}
 
@@ -142,9 +144,15 @@ func DoAction(c *gin.Context) {
 }
 
 func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args string) {
+	period := 5 * time.Second
 	var c = &http.Client{}
 
 	report := func(msg string) {
+		if !utils.ValidateAppHealthyJson(msg) {
+			log.Printf("Error: Json illeagel:<%s>", msg)
+			return
+		}
+
 		url := fmt.Sprintf("http://%s:%s/apis/v1alpha1/%s/%s/check", operatorIp, operatorPort, appType, name)
 		payload := bytes.NewBufferString(msg)
 		req, err := http.NewRequest("PUT", url, payload)
@@ -160,7 +168,12 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 		}
 		if resp.StatusCode != http.StatusAccepted {
 			log.Printf("Error: %s", resp.Status)
+			if period < 1*time.Minute {
+				period += 5 * time.Second
+			}
+			return
 		}
+		period = 5 * time.Second
 	}
 
 	var buf bytes.Buffer
@@ -169,10 +182,15 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 			for {
 				err := execInLinux("sh", workdir, []string{scriptPath, args}, &buf)
 				if err != nil {
-					log.Printf("Exec check cmd failed: %s", err)
+					if period < 1*time.Hour {
+						period *= 2
+					}
+					log.Printf("Exec check cmd failed: %s, wait %ds", err, period/time.Second)
+				} else {
+					report(buf.String())
 				}
-				report(buf.String())
-				time.Sleep(5 * time.Second)
+				buf.Reset()
+				time.Sleep(period)
 			}
 		}()
 	})
@@ -222,6 +240,7 @@ func pathExists(path string) (bool, error) {
 // execInLinux can exec a command with some params in linux system
 // all log producted by script would be print to stdout and return at logsBuffer if logsBuffer is not nil
 func execInLinux(cmdName, execPath string, params []string, logsBuffer *bytes.Buffer) error {
+	var lock sync.Mutex
 	cmd := exec.Command(cmdName, params...)
 	cmd.Dir = execPath
 
@@ -238,24 +257,39 @@ func execInLinux(cmdName, execPath string, params []string, logsBuffer *bytes.Bu
 	// print log
 	outReader := bufio.NewReader(stdout)
 	errReader := bufio.NewReader(stderr)
-	printLog := func(reader *bufio.Reader) {
+	printLog := func(reader *bufio.Reader, typex string) {
 		for {
 			line, err := reader.ReadString('\n')
+			log.Printf("%s: %s", typex, line)
+			if logsBuffer != nil {
+				lock.Lock()
+				logsBuffer.WriteString(line)
+				lock.Unlock()
+			}
 			if err != nil || err == io.EOF {
 				break
 			}
-			log.Println(line)
-			if logsBuffer != nil {
-				logsBuffer.WriteString(line)
-			}
 		}
 	}
-	go printLog(outReader)
-	go printLog(errReader)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		printLog(outReader, "Stdout")
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		printLog(errReader, "Stderr")
+	}()
 
 	err = cmd.Start()
 	if err != nil {
 		return err
 	}
+
+	wg.Wait()
 	return cmd.Wait()
 }

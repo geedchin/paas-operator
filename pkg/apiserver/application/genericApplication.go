@@ -97,15 +97,6 @@ type Statusx struct {
 // ]
 type Eventx []map[string]string
 
-//{
-//	  "code": "0",
-//	  "msg": "some message"
-//}
-type AppHealthy struct {
-	Code string `json:"code"`
-	Msg  string `json:"msg"`
-}
-
 func (a *GenericApplication) UpdateStatus(action ApplicationAction, ctx iris.Context) {
 	ctx.Application().Logger().Infof("The application with name <%s> start update status; "+
 		"expect status: <%s>; realtime status: <%s>;", a.Name, a.App.Status.Expect, a.App.Status.Realtime)
@@ -302,6 +293,7 @@ func CallToAgent(action ApplicationAction, app *GenericApplication, ctx iris.Con
 	appInfo.Stop = app.GetApp().Stop
 	appInfo.Restart = app.GetApp().Restart
 	appInfo.Uninstall = app.GetApp().Uninstall
+	appInfo.Check = app.GetApp().Check
 	appInfo.Package = app.GetApp().Package
 	appInfo.Metadata = app.GetApp().Metadata
 
