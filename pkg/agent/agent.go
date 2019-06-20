@@ -3,14 +3,17 @@ package agent
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -123,7 +126,7 @@ func DoAction(c *gin.Context) {
 		}
 
 		// exec the script
-		err = execInLinux("sh", WorkDir, []string{scriptPath, args}, nil)
+		err = execInLinux("sh", WorkDir, []string{scriptPath, args}, nil, true)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +146,38 @@ func DoAction(c *gin.Context) {
 	})
 }
 
+type CheckArg struct {
+	Name         string `json:"name"`
+	AppType      string `json:"apptype"`
+	OperatorIp   string `json:"operatorip"`
+	OperatorPort string `json:"operatorport"`
+	WorkDir      string `json:"workdir"`
+	ScriptPath   string `json:"scriptpath"`
+	Args         string `json:"args"`
+}
+
 func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args string) {
+	// save all func args to checkInfo.json
+	var ca = CheckArg{
+		Name:         name,
+		AppType:      appType,
+		OperatorIp:   operatorIp,
+		OperatorPort: operatorPort,
+		WorkDir:      workdir,
+		ScriptPath:   scriptPath,
+		Args:         args,
+	}
+	caBytes, err := json.Marshal(ca)
+	if err != nil {
+		log.Printf("marshal checkInfo.json failed: %s", err)
+	} else {
+		err = ioutil.WriteFile(filepath.Join(WorkDir, "checkInfo.json"), caBytes, 0666)
+		if err != nil {
+			log.Printf("write checkInfo.json failed: %s", err)
+		}
+	}
+
+	// prepare to check
 	period := 5 * time.Second
 	var c = &http.Client{}
 
@@ -152,6 +186,17 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 			log.Printf("Error: Json illeagel:<%s>", msg)
 			return
 		}
+
+		// trim "xxx{xxx}xxx" to "{xxx}"
+		trimMsg := func(msg string) string {
+			start := strings.Index(msg, "{")
+			end := strings.LastIndex(msg, "}")
+			if start < 0 || end < 0 {
+				return msg
+			}
+			return msg[start : end+1]
+		}
+		msg = trimMsg(msg)
 
 		url := fmt.Sprintf("http://%s:%s/apis/v1alpha1/%s/%s/check", operatorIp, operatorPort, appType, name)
 		payload := bytes.NewBufferString(msg)
@@ -180,7 +225,7 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 	once.Do(func() {
 		go func() {
 			for {
-				err := execInLinux("sh", workdir, []string{scriptPath, args}, &buf)
+				err := execInLinux("sh", workdir, []string{scriptPath, args}, &buf, false)
 				if err != nil {
 					if period < 1*time.Hour {
 						period *= 2
@@ -194,6 +239,21 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 			}
 		}()
 	})
+}
+
+func TryCheck() {
+	infoBytes, err := ioutil.ReadFile(filepath.Join(WorkDir, "checkInfo.json"))
+	if err != nil {
+		log.Printf("read checkInfo.json failed: %s", err)
+		return
+	}
+	var ca CheckArg
+	err = json.Unmarshal(infoBytes, &ca)
+	if err != nil {
+		log.Printf("Unmarshal checkInfo.json failed: %s", err)
+		return
+	}
+	check(ca.Name, ca.AppType, ca.OperatorIp, ca.OperatorPort, ca.WorkDir, ca.ScriptPath, ca.Args)
 }
 
 // local dir: /opt/app/; local script: /opt/app/xxx.sh
@@ -217,7 +277,7 @@ func getScriptIfNotExist(scriptName, repoUrl string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = execInLinux("wget", WorkDir, []string{repoUrl + scriptName}, nil)
+	err = execInLinux("wget", WorkDir, []string{repoUrl + scriptName}, nil, true)
 	if err != nil {
 		log.Println("Wget Failed!!!")
 		return "", err
@@ -239,7 +299,7 @@ func pathExists(path string) (bool, error) {
 
 // execInLinux can exec a command with some params in linux system
 // all log producted by script would be print to stdout and return at logsBuffer if logsBuffer is not nil
-func execInLinux(cmdName, execPath string, params []string, logsBuffer *bytes.Buffer) error {
+func execInLinux(cmdName, execPath string, params []string, logsBuffer *bytes.Buffer, print bool) error {
 	var lock sync.Mutex
 	cmd := exec.Command(cmdName, params...)
 	cmd.Dir = execPath
@@ -260,7 +320,9 @@ func execInLinux(cmdName, execPath string, params []string, logsBuffer *bytes.Bu
 	printLog := func(reader *bufio.Reader, typex string) {
 		for {
 			line, err := reader.ReadString('\n')
-			log.Printf("%s: %s", typex, line)
+			if print {
+				log.Printf("%s: %s", typex, line)
+			}
 			if logsBuffer != nil {
 				lock.Lock()
 				logsBuffer.WriteString(line)

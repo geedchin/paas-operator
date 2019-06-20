@@ -6,5 +6,6 @@ import (
 
 func main() {
 	app := agent.NewGinEngine()
+	go agent.TryCheck()
 	app.Run(":3335")
 }

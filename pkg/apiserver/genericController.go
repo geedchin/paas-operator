@@ -299,7 +299,9 @@ func setApplicationRealtimeStatus(appType application.AppType, ctx iris.Context)
 	expect := app.GetStatus().Expect
 
 	if expect == application.Running && !healthy {
-		app.SetStatus(application.ApplicationStatus(""), application.Failed, ctx)
+		if app.GetStatus().Realtime == application.Running {
+			app.SetStatus(application.ApplicationStatus(""), application.Failed, ctx)
+		}
 	}
 	ctx.StatusCode(iris.StatusAccepted)
 }
