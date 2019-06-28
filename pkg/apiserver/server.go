@@ -37,6 +37,8 @@ func applyRoute(app *iris.Application) {
 
 	// Query a database status
 	dbRouter.Get("/{a_name}/status", GetDatabaseStatus)
+	// Query databases which status modified by check
+	dbRouter.Get("/status/changed/{date}", GetDatabasesStatusChanged)
 	// Create a database
 	dbRouter.Post("/create", CreateDatabase)
 	// Update a database's expect status, status -> [ running、stopped、not-installed ]
@@ -49,6 +51,8 @@ func applyRoute(app *iris.Application) {
 
 	// Query a middleware status
 	mwRouter.Get("/{a_name}/status", GetMiddlewareStatus)
+	// Query middlewares which status modified by check
+	mwRouter.Get("/status/changed/{date}", GetMiddlewaresStatusChanged)
 	// Create a middleware
 	mwRouter.Post("/create", CreateMiddleware)
 	// Update a middleware's expect status, status -> [ running、stopped、not-installed ]

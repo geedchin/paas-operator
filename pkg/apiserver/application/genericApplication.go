@@ -29,24 +29,24 @@ var (
 
 func init() {
 	if WORK_DIR == "" {
-		log.Printf("Warning: %s is unset, use default value: %s", "APISERVER_WORK_DIR", WORK_DIR)
 		WORK_DIR = "/opt/app/"
+		log.Printf("Warning: %s is unset, use default value: %s", "APISERVER_WORK_DIR", WORK_DIR)
 	}
 	if AGENT_ZIP_NAME == "" {
-		log.Printf("Warning: %s is unset, use default value: %s", "AGENT_ZIP_NAME", AGENT_ZIP_NAME)
 		AGENT_ZIP_NAME = "agent.tar.gz"
+		log.Printf("Warning: %s is unset, use default value: %s", "AGENT_ZIP_NAME", AGENT_ZIP_NAME)
 	}
 	if AGENT_PORT == "" {
-		log.Printf("Warning: %s is unset, use default value: %s", "AGENT_PORT", AGENT_PORT)
 		AGENT_PORT = "3335"
+		log.Printf("Warning: %s is unset, use default value: %s", "AGENT_PORT", AGENT_PORT)
 	}
 	if OPERATOR_IP == "" {
-		log.Printf("Warning: %s is unset, use default value: %s", "OPERATOR_IP", OPERATOR_IP)
 		OPERATOR_IP = "127.0.0.1"
+		log.Printf("Warning: %s is unset, use default value: %s", "OPERATOR_IP", OPERATOR_IP)
 	}
 	if OPERATOR_PORT == "" {
-		log.Printf("Warning: %s is unset, use default value: %s", "OPERATOR_PORT", OPERATOR_PORT)
 		OPERATOR_PORT = "3334"
+		log.Printf("Warning: %s is unset, use default value: %s", "OPERATOR_PORT", OPERATOR_PORT)
 	}
 }
 
@@ -172,6 +172,11 @@ func (a *GenericApplication) SetStatus(expect, realtime ApplicationStatus, ctx i
 	// TODO(ht) consider concurrency
 	updateFn := func() {
 		err := GetETCDApplications(appType).Update(a.GetName(), a, ctx)
+		if err != nil {
+			ctx.Application().Logger().Errorf("Got some error: %s", err.Error())
+		}
+
+		err = GetETCDApplications(appType).AddChangedApp(a.Name, ctx)
 		if err != nil {
 			ctx.Application().Logger().Errorf("Got some error: %s", err.Error())
 		}

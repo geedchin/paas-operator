@@ -17,9 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
-
 	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
+	"github.com/gin-gonic/gin"
 )
 
 var once = &sync.Once{}
@@ -182,11 +181,6 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 	var c = &http.Client{}
 
 	report := func(msg string) {
-		if !utils.ValidateAppHealthyJson(msg) {
-			log.Printf("Error: Json illeagel:<%s>", msg)
-			return
-		}
-
 		// trim "xxx{xxx}xxx" to "{xxx}"
 		trimMsg := func(msg string) string {
 			start := strings.Index(msg, "{")
@@ -197,6 +191,11 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 			return msg[start : end+1]
 		}
 		msg = trimMsg(msg)
+
+		if !utils.ValidateAppHealthyJson(msg) {
+			log.Printf("Error: Json illeagel:<%s>", msg)
+			return
+		}
 
 		url := fmt.Sprintf("http://%s:%s/apis/v1alpha1/%s/%s/check", operatorIp, operatorPort, appType, name)
 		payload := bytes.NewBufferString(msg)

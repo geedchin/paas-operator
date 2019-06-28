@@ -36,6 +36,11 @@ func SetDatabaseRealtimeStatus(ctx iris.Context) {
 	setApplicationRealtimeStatus(appType, ctx)
 }
 
+func GetDatabasesStatusChanged(ctx iris.Context) {
+	appType := application.APP_DATABASE
+	getApplicationsStatusChanged(appType, ctx)
+}
+
 func CreateMiddleware(ctx iris.Context) {
 	appType := application.APP_MIDDLEWARE
 	createApplication(appType, ctx)
@@ -59,6 +64,11 @@ func DeleteMiddleware(ctx iris.Context) {
 func SetMiddlewareRealtimeStatus(ctx iris.Context) {
 	appType := application.APP_MIDDLEWARE
 	setApplicationRealtimeStatus(appType, ctx)
+}
+
+func GetMiddlewaresStatusChanged(ctx iris.Context) {
+	appType := application.APP_MIDDLEWARE
+	getApplicationsStatusChanged(appType, ctx)
 }
 
 func createApplication(appType application.AppType, ctx iris.Context) {
@@ -298,10 +308,19 @@ func setApplicationRealtimeStatus(appType application.AppType, ctx iris.Context)
 
 	expect := app.GetStatus().Expect
 
-	if expect == application.Running && !healthy {
-		if app.GetStatus().Realtime == application.Running {
+	if expect == application.Running {
+		if app.GetStatus().Realtime == application.Running && !healthy {
 			app.SetStatus(application.ApplicationStatus(""), application.Failed, ctx)
+		} else if app.GetStatus().Realtime != application.Running && healthy {
+			app.SetStatus(application.ApplicationStatus(""), application.Running, ctx)
 		}
 	}
 	ctx.StatusCode(iris.StatusAccepted)
+}
+
+func getApplicationsStatusChanged(appType application.AppType, ctx iris.Context) {
+	date := ctx.Params().GetString("date")
+	apps := application.GetETCDApplications(appType).GetChangedApps(date, ctx)
+	ctx.StatusCode(iris.StatusOK)
+	ctx.JSON(apps)
 }

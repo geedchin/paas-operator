@@ -81,6 +81,15 @@ type Applications interface {
 	Delete(name string, ctx iris.Context) (Application, error)
 }
 
+type AppsStatusChanged interface {
+	// Add a app to store which status is update by check
+	AddChangedApp(name string, ctx iris.Context) error
+	// Get apps from store which status is update by check during one day
+	// date: 2019-06-28 -> 0628
+	// return "["app1","app2"]"
+	GetChangedApps(date string, ctx iris.Context) []string
+}
+
 // Application specify a Application resource
 type Application interface {
 	UpdateStatus(action ApplicationAction, ctx iris.Context)

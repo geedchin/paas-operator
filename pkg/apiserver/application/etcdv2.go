@@ -12,10 +12,14 @@ import (
 	"github.com/coreos/etcd/client"
 )
 
-var globalKapi client.KeysAPI
-var etcdEndpoint = os.Getenv("ETCD_ENDPOINT")
-var dbPrefix = os.Getenv("ETCD_DB_PREFIX")
-var mwPrefix = os.Getenv("ETCD_MW_PREFIX")
+var (
+	globalKapi      client.KeysAPI
+	etcdEndpoint    = os.Getenv("ETCD_ENDPOINT")
+	dbPrefix        = os.Getenv("ETCD_DB_PREFIX")
+	mwPrefix        = os.Getenv("ETCD_MW_PREFIX")
+	dbChangedPrefix = os.Getenv("ETCD_DB_CHANGED_PREFIX")
+	mwChangedPrefix = os.Getenv("ETCD_MW_CHANGED_PREFIX")
+)
 
 func init() {
 	if etcdEndpoint == "" {
@@ -32,6 +36,16 @@ func init() {
 		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_MW_PREFIX", mwPrefix)
 		mwPrefix = "/k6s/middleware"
 	}
+
+	if dbChangedPrefix == "" {
+		dbChangedPrefix = "/k6s/changed/database"
+		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_DB_CHANGED_PREFIX", dbChangedPrefix)
+	}
+	if mwChangedPrefix == "" {
+		mwChangedPrefix = "/k6s/changed/middleware"
+		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_MW_CHANGED_PREFIX", mwChangedPrefix)
+	}
+
 	cfg := client.Config{
 		Endpoints: []string{etcdEndpoint},
 		Transport: client.DefaultTransport,
@@ -46,8 +60,9 @@ func init() {
 }
 
 type ETCDApplications struct {
-	kapi   client.KeysAPI
-	prefix string
+	kapi          client.KeysAPI
+	prefix        string
+	changedPrefix string
 }
 
 var etcdDatabases = &ETCDApplications{}
@@ -59,10 +74,12 @@ func GetETCDApplications(appType AppType) *ETCDApplications {
 	case APP_DATABASE:
 		etcdDatabases.kapi = globalKapi
 		etcdDatabases.prefix = dbPrefix
+		etcdDatabases.changedPrefix = dbChangedPrefix
 		return etcdDatabases
 	case APP_MIDDLEWARE:
 		etcdMiddlewares.kapi = globalKapi
 		etcdMiddlewares.prefix = mwPrefix
+		etcdMiddlewares.changedPrefix = mwChangedPrefix
 		return etcdMiddlewares
 	default:
 		log.Fatal("AppType illegal")
@@ -148,4 +165,33 @@ func (apps *ETCDApplications) Delete(name string, ctx iris.Context) (Application
 	ctx.Application().Logger().Infof("Delete application <%s> successful.", name)
 
 	return retApp, nil
+}
+
+// eg. key=/k6s/database/0528/mysql-xxx-123 value=""
+func (apps *ETCDApplications) AddChangedApp(name string, ctx iris.Context) error {
+	date := time.Now().Format("1504")
+	key := fmt.Sprintf("%s/%s/%s", apps.changedPrefix, date, name)
+	_, err := apps.kapi.Set(context.Background(), key, "", nil)
+	if err != nil {
+		ctx.Application().Logger().Errorf("Add app <%s>'s status changed info to etcd failed. with error: <%s>", name, err.Error())
+		return err
+	}
+	ctx.Application().Logger().Infof("Add app <%s>'s status changed info to etcd success: <%s>", name)
+	return nil
+}
+
+func (apps *ETCDApplications) GetChangedApps(date string, ctx iris.Context) []string {
+	key := fmt.Sprintf("%s/%s", apps.changedPrefix, date)
+	resp, err := apps.kapi.Get(context.Background(), key, nil)
+	if err != nil {
+		ctx.Application().Logger().Errorf("Get application changed info from etcd failed: <%s>", err.Error())
+		return []string{}
+	}
+
+	var appsSlice = make([]string, 0)
+	for _, node := range resp.Node.Nodes {
+		appsSlice = append(appsSlice, node.Key)
+	}
+
+	return appsSlice
 }
