@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kataras/iris"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/coreos/etcd/client"
+	"github.com/kataras/iris"
 )
 
 var (
@@ -169,7 +170,7 @@ func (apps *ETCDApplications) Delete(name string, ctx iris.Context) (Application
 
 // eg. key=/k6s/database/0528/mysql-xxx-123 value=""
 func (apps *ETCDApplications) AddChangedApp(name string, ctx iris.Context) error {
-	date := time.Now().Format("1504")
+	date := time.Now().Format("0102")
 	key := fmt.Sprintf("%s/%s/%s", apps.changedPrefix, date, name)
 	_, err := apps.kapi.Set(context.Background(), key, "", nil)
 	if err != nil {
@@ -190,7 +191,9 @@ func (apps *ETCDApplications) GetChangedApps(date string, ctx iris.Context) []st
 
 	var appsSlice = make([]string, 0)
 	for _, node := range resp.Node.Nodes {
-		appsSlice = append(appsSlice, node.Key)
+		keySplit := strings.Split(node.Key, "/")
+		name := keySplit[len(keySplit)-1]
+		appsSlice = append(appsSlice, name)
 	}
 
 	return appsSlice
