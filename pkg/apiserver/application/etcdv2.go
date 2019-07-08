@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/etcd/client"
@@ -21,6 +22,8 @@ var (
 	dbChangedPrefix = os.Getenv("ETCD_DB_CHANGED_PREFIX")
 	mwChangedPrefix = os.Getenv("ETCD_MW_CHANGED_PREFIX")
 )
+
+var once = &sync.Once{}
 
 func init() {
 	if etcdEndpoint == "" {
@@ -182,6 +185,8 @@ func (apps *ETCDApplications) AddChangedApp(name string, ctx iris.Context) error
 }
 
 func (apps *ETCDApplications) GetChangedApps(date string, ctx iris.Context) []string {
+	go apps.clearDeletedChangedApps(date, ctx)
+
 	key := fmt.Sprintf("%s/%s", apps.changedPrefix, date)
 	resp, err := apps.kapi.Get(context.Background(), key, nil)
 	if err != nil {
@@ -197,4 +202,43 @@ func (apps *ETCDApplications) GetChangedApps(date string, ctx iris.Context) []st
 	}
 
 	return appsSlice
+}
+
+// If a db/mw is deleted, we want to delete the key from changed key list (only check current day)
+func (apps *ETCDApplications) clearDeletedChangedApps(date string, ctx iris.Context) {
+	period := 1 * time.Minute
+	once.Do(func() {
+		for {
+			<-time.Tick(period)
+
+			var appType AppType
+			if strings.Contains(apps.changedPrefix, string(APP_DATABASE)) {
+				appType = APP_DATABASE
+			} else {
+				appType = APP_MIDDLEWARE
+			}
+
+			key := fmt.Sprintf("%s/%s", apps.changedPrefix, date)
+			resp, err := apps.kapi.Get(context.Background(), key, nil)
+			if err != nil {
+				ctx.Application().Logger().Errorf("Get application changed info from etcd failed: <%s>", err.Error())
+				return
+			}
+
+			for _, node := range resp.Node.Nodes {
+				keySplit := strings.Split(node.Key, "/")
+				name := keySplit[len(keySplit)-1]
+				if _, exist := GetETCDApplications(appType).Get(name, ctx); !exist {
+					deleteKey := fmt.Sprintf("%s/%s", key, name)
+					resp, err = apps.kapi.Delete(context.Background(), deleteKey, nil)
+					if err != nil {
+						ctx.Application().Logger().Errorf("Delete changed key from ETCD failed: <%s>", err.Error())
+						continue
+					}
+
+					ctx.Application().Logger().Infof("Delete changed key <%s> successful.", deleteKey)
+				}
+			}
+		}
+	})
 }

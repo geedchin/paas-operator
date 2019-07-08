@@ -182,7 +182,8 @@ func updateApplicationStatus(appType application.AppType, ctx iris.Context) {
 			go app.UpdateStatus(application.AInstall, ctx)
 
 			// start a application
-		} else if app.GetStatus().Expect == application.Stopped {
+		} else if app.GetStatus().Expect == application.Stopped ||
+			app.GetStatus().Expect == application.Running && app.GetStatus().Realtime != application.Running {
 			app.GetApp().Status.Expect = application.Running
 			app.GetApp().Status.Realtime = application.Starting
 			// update app's real status
@@ -190,7 +191,7 @@ func updateApplicationStatus(appType application.AppType, ctx iris.Context) {
 		}
 		// stop a application
 	case application.Stopped:
-		if app.GetStatus().Expect == application.Running {
+		if app.GetStatus().Expect == application.Running || app.GetStatus().Realtime == application.Running {
 			app.GetApp().Status.Expect = application.Stopped
 			app.GetApp().Status.Realtime = application.Stopping
 			// update app's real status
