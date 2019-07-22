@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/middleware/recover"
 )
 
 func Run() {
@@ -15,6 +16,10 @@ func Run() {
 	defer f.Close()
 
 	app := iris.New()
+
+	// Recover middleware recovers from any panics and writes a 500 if there was one.
+	app.Use(recover.New())
+
 	app.Logger().AddOutput(f)
 
 	// for test only

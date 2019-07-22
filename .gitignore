@@ -13,3 +13,7 @@
 
 # ide
 .idea
+
+# log
+*.log
+log*

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/kataras/iris"
@@ -321,7 +322,26 @@ func CallToAgent(action ApplicationAction, app *GenericApplication, ctx iris.Con
 	resp, err := http.Post(agentUrl, "application/json;charset=utf-8", bytes.NewBuffer(jsonBody))
 	if err != nil {
 		ctx.Application().Logger().Error(err)
-		return err
+
+		if !strings.Contains(err.Error(), "connection refused") {
+			return err
+		}
+
+		waitTime := 5 * time.Second
+		retry := 5 // 5s;10s;20s;40s;80s
+		for i := 0; i < retry; i++ {
+			ctx.Application().Logger().Infof("wait for agent start, retry %d/%d", i+1, retry)
+			time.Sleep(waitTime)
+			waitTime = waitTime * 2
+			resp, err = http.Post(agentUrl, "application/json;charset=utf-8", bytes.NewBuffer(jsonBody))
+			if err != nil {
+				if !strings.Contains(err.Error(), "connection refused") {
+					return err
+				}
+				continue
+			}
+			break
+		}
 	}
 
 	if resp.StatusCode != 200 {
