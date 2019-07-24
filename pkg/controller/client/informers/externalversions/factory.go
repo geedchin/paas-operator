@@ -12,9 +12,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
-	blueprintcontroller "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/blueprintcontroller"
-	internalinterfaces "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/internalinterfaces"
+	versioned "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned"
+	blueprintcontroller "github.com/farmer-hutao/paas-operator/pkg/controller/client/informers/externalversions/blueprintcontroller"
+	internalinterfaces "github.com/farmer-hutao/paas-operator/pkg/controller/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

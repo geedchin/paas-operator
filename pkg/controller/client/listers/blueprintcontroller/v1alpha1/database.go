@@ -8,7 +8,7 @@ Copyright The K6s Authors.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
+	v1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/apis/blueprintcontroller/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"

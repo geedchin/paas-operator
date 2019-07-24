@@ -7,10 +7,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 
-	"github.com/farmer-hutao/k6s/pkg/controller/signals"
+	"github.com/farmer-hutao/paas-operator/pkg/controller/signals"
 
-	clientset "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
-	informers "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions"
+	clientset "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned"
+	informers "github.com/farmer-hutao/paas-operator/pkg/controller/client/informers/externalversions"
 )
 
 var (

@@ -8,7 +8,7 @@ Copyright The K6s Authors.
 package scheme
 
 import (
-	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
+	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/apis/blueprintcontroller/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

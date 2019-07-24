@@ -8,7 +8,7 @@ Copyright The K6s Authors.
 package v1alpha1
 
 import (
-	internalinterfaces "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/internalinterfaces"
+	internalinterfaces "github.com/farmer-hutao/paas-operator/pkg/controller/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.

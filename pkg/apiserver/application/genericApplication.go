@@ -15,9 +15,9 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/farmer-hutao/k6s/pkg/agent"
-	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
-	"github.com/farmer-hutao/k6s/pkg/apiserver/utils/sshcli"
+	"github.com/farmer-hutao/paas-operator/pkg/agent"
+	"github.com/farmer-hutao/paas-operator/pkg/apiserver/utils"
+	"github.com/farmer-hutao/paas-operator/pkg/apiserver/utils/sshcli"
 )
 
 var (

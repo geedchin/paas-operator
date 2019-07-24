@@ -8,9 +8,9 @@ Copyright The K6s Authors.
 package fake
 
 import (
-	clientset "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
-	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
-	fakeblueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1/fake"
+	clientset "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned"
+	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
+	fakeblueprintcontrollerv1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

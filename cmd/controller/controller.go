@@ -13,11 +13,11 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	blueprintv1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
-	clientset "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned"
-	blueprintscheme "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/scheme"
-	informers "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/blueprintcontroller/v1alpha1"
-	listers "github.com/farmer-hutao/k6s/pkg/controller/client/listers/blueprintcontroller/v1alpha1"
+	blueprintv1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/apis/blueprintcontroller/v1alpha1"
+	clientset "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned"
+	blueprintscheme "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned/scheme"
+	informers "github.com/farmer-hutao/paas-operator/pkg/controller/client/informers/externalversions/blueprintcontroller/v1alpha1"
+	listers "github.com/farmer-hutao/paas-operator/pkg/controller/client/listers/blueprintcontroller/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 )

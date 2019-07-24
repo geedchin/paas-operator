@@ -8,7 +8,7 @@ Copyright The K6s Authors.
 package versioned
 
 import (
-	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
+	blueprintcontrollerv1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

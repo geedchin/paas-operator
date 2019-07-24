@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
+	"github.com/farmer-hutao/paas-operator/pkg/apiserver/utils"
 	"github.com/gin-gonic/gin"
 )
 

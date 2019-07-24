@@ -1,7 +1,7 @@
 package v1alpha1
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller"
+	"github.com/farmer-hutao/paas-operator/pkg/controller/apis/blueprintcontroller"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

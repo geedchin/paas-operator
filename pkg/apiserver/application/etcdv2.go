@@ -36,19 +36,19 @@ func init() {
 	}
 	if dbPrefix == "" {
 		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_DB_PREFIX", dbPrefix)
-		dbPrefix = "/k6s/database"
+		dbPrefix = "/paas-operator/database"
 	}
 	if mwPrefix == "" {
 		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_MW_PREFIX", mwPrefix)
-		mwPrefix = "/k6s/middleware"
+		mwPrefix = "/paas-operator/middleware"
 	}
 
 	if dbChangedPrefix == "" {
-		dbChangedPrefix = "/k6s/changed/database"
+		dbChangedPrefix = "/paas-operator/changed/database"
 		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_DB_CHANGED_PREFIX", dbChangedPrefix)
 	}
 	if mwChangedPrefix == "" {
-		mwChangedPrefix = "/k6s/changed/middleware"
+		mwChangedPrefix = "/paas-operator/changed/middleware"
 		log.Printf("Warning: %s is unset, use default value: %s", "ETCD_MW_CHANGED_PREFIX", mwChangedPrefix)
 	}
 
@@ -98,7 +98,7 @@ func (apps *ETCDApplications) Add(name string, app Application, ctx iris.Context
 	if err != nil {
 		return err
 	}
-	// eg. key==/k6s/database/mysql-xxx
+	// eg. key==/paas-operator/database/mysql-xxx
 	key := fmt.Sprintf("%s/%s", apps.prefix, name)
 	_, err = apps.kapi.Set(context.Background(), key, string(appBytes), nil)
 	if err != nil {
@@ -114,7 +114,7 @@ func (apps *ETCDApplications) Update(name string, app Application, ctx iris.Cont
 	if err != nil {
 		return err
 	}
-	// eg. key==/k6s/database/mysql-xxx
+	// eg. key==/paas-operator/database/mysql-xxx
 	key := fmt.Sprintf("%s/%s", apps.prefix, name)
 	_, err = apps.kapi.Update(context.Background(), key, string(appBytes))
 	if err != nil {
@@ -173,7 +173,7 @@ func (apps *ETCDApplications) Delete(name string, ctx iris.Context) (Application
 	return retApp, nil
 }
 
-// eg. key=/k6s/database/0528/mysql-xxx-123 value=""
+// eg. key=/paas-operator/database/0528/mysql-xxx-123 value=""
 func (apps *ETCDApplications) AddChangedApp(name string, ctx iris.Context) error {
 	date := time.Now().Format("0102")
 	key := fmt.Sprintf("%s/%s/%s", apps.changedPrefix, date, name)

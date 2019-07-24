@@ -8,7 +8,7 @@ Copyright The K6s Authors.
 package fake
 
 import (
-	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
+	v1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned/typed/blueprintcontroller/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

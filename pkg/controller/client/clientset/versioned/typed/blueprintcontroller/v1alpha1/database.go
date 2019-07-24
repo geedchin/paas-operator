@@ -10,8 +10,8 @@ package v1alpha1
 import (
 	"time"
 
-	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
-	scheme "github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/apis/blueprintcontroller/v1alpha1"
+	scheme "github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

@@ -8,8 +8,8 @@ Copyright The K6s Authors.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/apis/blueprintcontroller/v1alpha1"
-	"github.com/farmer-hutao/k6s/pkg/controller/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/apis/blueprintcontroller/v1alpha1"
+	"github.com/farmer-hutao/paas-operator/pkg/controller/client/clientset/versioned/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )

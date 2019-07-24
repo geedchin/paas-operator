@@ -8,8 +8,8 @@ Copyright The K6s Authors.
 package blueprintcontroller
 
 import (
-	v1alpha1 "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/blueprintcontroller/v1alpha1"
-	internalinterfaces "github.com/farmer-hutao/k6s/pkg/controller/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/farmer-hutao/paas-operator/pkg/controller/client/informers/externalversions/blueprintcontroller/v1alpha1"
+	internalinterfaces "github.com/farmer-hutao/paas-operator/pkg/controller/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.
