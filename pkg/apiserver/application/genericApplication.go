@@ -338,6 +338,7 @@ func CallToAgent(action ApplicationAction, app *GenericApplication, ctx iris.Con
 				if !strings.Contains(err.Error(), "connection refused") {
 					return err
 				}
+				ctx.Application().Logger().Infof("Failed again: %s", err)
 				continue
 			}
 			break
