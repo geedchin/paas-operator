@@ -14,15 +14,15 @@ function kube::build::build_image() {
   cp ${ROOT_PATH}/cmd/agent/agent ${ROOT_PATH}/build/agent/
   cp ${ROOT_PATH}/cmd/apiserver/apiserver ${ROOT_PATH}/build/apiserver/docker/
 
-  cd ${ROOT_PATH}/build/apiserver/docker/ && docker build -t apiserver:v1 . && cd -
-
   cd ${ROOT_PATH}/build/ && tar -czvf agent.tar.gz agent && cd -
+
+  cp ${ROOT_PATH}/build/agent.tar.gz ${ROOT_PATH}/build/apiserver/docker/
+  cd ${ROOT_PATH}/build/apiserver/docker/ && docker build -t apiserver:v1 . && cd -
 
   mkdir -p ${ROOT_PATH}/build/${OUTPUT_DIR}
   cd ${ROOT_PATH}/build/${OUTPUT_DIR}/
   docker save apiserver:v1 -o apiserver_v1.tar
   cd -
 
-  mv ${ROOT_PATH}/build/agent.tar.gz ${ROOT_PATH}/build/${OUTPUT_DIR}/
-
+  # mv ${ROOT_PATH}/build/agent.tar.gz ${ROOT_PATH}/build/${OUTPUT_DIR}/
 }

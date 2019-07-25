@@ -2,6 +2,12 @@
 
 Welcome to the paas-operator wiki!
 
+## quick start
+
+1. 在 build/apiserver/docker/Dockerfile 中替换 ${BASE_IMAGE} 为你想要的基础镜像，比如： centos:7
+2. 给 build/apiserver/docker/startup.sh 中 ${OPERATOR_IP} 一个恰当的值，如果你使用 Nodeport 方式暴露服务，那么这里对应你的宿主机 ip
+3.
+
 ## 资源分类
 
 考虑到很多场景下数据库和中间件的差异性，可能多数企业会分别对待这两类软件，包括维护人员、部署模式等等。所以一开始我们就将 Database 和 Middleware 分开处理。资源分为：

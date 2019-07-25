@@ -244,7 +244,7 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 func TryCheck() {
 	infoBytes, err := ioutil.ReadFile(filepath.Join(WorkDir, "checkInfo.json"))
 	if err != nil {
-		log.Printf("read checkInfo.json failed: %s", err)
+		log.Printf("read checkInfo.json failed: %s; if it's the first time start agent, it's ok.", err)
 		return
 	}
 	var ca CheckArg

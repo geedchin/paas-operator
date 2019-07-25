@@ -1,5 +1,5 @@
 [Unit]
-Description=k6s
+Description=paas-operator
 Wants=network-online.target
 After=network.target
 
