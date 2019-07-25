@@ -1,6 +1,6 @@
 package main
 
-import "github.com/farmer-hutao/k6s/pkg/apiserver"
+import "github.com/farmer-hutao/paas-operator/pkg/apiserver"
 
 func main() {
     apiserver.Run()

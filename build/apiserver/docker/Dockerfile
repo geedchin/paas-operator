@@ -1,15 +1,15 @@
-FROM centos:7
+FROM ${BASE_IMAGE}
 
 WORKDIR /opt
 
 USER root
 
-COPY apiserver /opt/apiserver
+RUN mkdir -p /opt/app
 
-COPY startup.sh /opt/startup.sh
+COPY apiserver startup.sh /opt/
 
-RUN chmod +x /opt/apiserver
+COPY jq /bin/
 
-RUN chmod +x /opt/startup.sh
+RUN chmod +x /opt/apiserver /opt/startup.sh /bin/jq
 
 ENTRYPOINT ["./startup.sh"]

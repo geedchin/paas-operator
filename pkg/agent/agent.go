@@ -13,11 +13,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
+	"github.com/farmer-hutao/paas-operator/pkg/apiserver/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -125,7 +126,7 @@ func DoAction(c *gin.Context) {
 		}
 
 		// exec the script
-		err = execInLinux("sh", WorkDir, []string{scriptPath, args}, nil, true)
+		err = execInSystem(WorkDir, []string{scriptPath, args}, nil, true)
 		if err != nil {
 			return nil, err
 		}
@@ -224,7 +225,7 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 	once.Do(func() {
 		go func() {
 			for {
-				err := execInLinux("sh", workdir, []string{scriptPath, args}, &buf, false)
+				err := execInSystem(workdir, []string{scriptPath, args}, &buf, false)
 				if err != nil {
 					if period < 1*time.Hour {
 						period *= 2
@@ -243,7 +244,7 @@ func check(name, appType, operatorIp, operatorPort, workdir, scriptPath, args st
 func TryCheck() {
 	infoBytes, err := ioutil.ReadFile(filepath.Join(WorkDir, "checkInfo.json"))
 	if err != nil {
-		log.Printf("read checkInfo.json failed: %s", err)
+		log.Printf("read checkInfo.json failed: %s; if it's the first time start agent, it's ok.", err)
 		return
 	}
 	var ca CheckArg
@@ -276,7 +277,7 @@ func getScriptIfNotExist(scriptName, repoUrl string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = execInLinux("wget", WorkDir, []string{repoUrl + scriptName}, nil, true)
+	err = execInSystem(WorkDir, []string{"wget", repoUrl + scriptName}, nil, true)
 	if err != nil {
 		log.Println("Wget Failed!!!")
 		return "", err
@@ -296,11 +297,25 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-// execInLinux can exec a command with some params in linux system
+// execInSystem can exec a command with some params in linux/windowns system
 // all log producted by script would be print to stdout and return at logsBuffer if logsBuffer is not nil
-func execInLinux(cmdName, execPath string, params []string, logsBuffer *bytes.Buffer, print bool) error {
+func execInSystem(execPath string, params []string, logsBuffer *bytes.Buffer, print bool) error {
 	var lock sync.Mutex
-	cmd := exec.Command(cmdName, params...)
+	var c string
+	var cmdName string
+
+	switch runtime.GOOS {
+	case "linux":
+		c = "-c"
+		cmdName = "sh"
+	case "windows":
+		c = "/c"
+		cmdName = "cmd"
+	default:
+		log.Panicf("System type error, got <%s>, but expect linux/windowns!", runtime.GOOS)
+	}
+
+	cmd := exec.Command(cmdName, append(params, c)...)
 	cmd.Dir = execPath
 
 	stdout, err := cmd.StdoutPipe()

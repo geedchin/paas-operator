@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/farmer-hutao/k6s/pkg/agent"
+	"github.com/farmer-hutao/paas-operator/pkg/agent"
 )
 
 func main() {

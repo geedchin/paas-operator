@@ -15,9 +15,9 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/farmer-hutao/k6s/pkg/agent"
-	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
-	"github.com/farmer-hutao/k6s/pkg/apiserver/utils/sshcli"
+	"github.com/farmer-hutao/paas-operator/pkg/agent"
+	"github.com/farmer-hutao/paas-operator/pkg/apiserver/utils"
+	"github.com/farmer-hutao/paas-operator/pkg/apiserver/utils/sshcli"
 )
 
 var (
@@ -323,7 +323,7 @@ func CallToAgent(action ApplicationAction, app *GenericApplication, ctx iris.Con
 	if err != nil {
 		ctx.Application().Logger().Error(err)
 
-		if !strings.Contains(err.Error(), "connection refused") || !strings.Contains(err.Error(), "timeout") {
+		if !strings.Contains(err.Error(), "connection refused") && !strings.Contains(err.Error(), "timeout") {
 			return err
 		}
 
@@ -335,7 +335,7 @@ func CallToAgent(action ApplicationAction, app *GenericApplication, ctx iris.Con
 			waitTime = waitTime * 2
 			resp, err = http.Post(agentUrl, "application/json;charset=utf-8", bytes.NewBuffer(jsonBody))
 			if err != nil {
-				if !strings.Contains(err.Error(), "connection refused") || !strings.Contains(err.Error(), "timeout") {
+				if !strings.Contains(err.Error(), "connection refused") && !strings.Contains(err.Error(), "timeout") {
 					return err
 				}
 				ctx.Application().Logger().Infof("Failed again: %s", err)

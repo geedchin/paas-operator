@@ -7,8 +7,8 @@ import (
 
 	"github.com/kataras/iris"
 
-	"github.com/farmer-hutao/k6s/pkg/apiserver/application"
-	"github.com/farmer-hutao/k6s/pkg/apiserver/utils"
+	"github.com/farmer-hutao/paas-operator/pkg/apiserver/application"
+	"github.com/farmer-hutao/paas-operator/pkg/apiserver/utils"
 )
 
 func CreateDatabase(ctx iris.Context) {
