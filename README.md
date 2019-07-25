@@ -13,6 +13,10 @@ paas-operator 是一个非容器 paas 平台解决方案，提供非容器应用
 ## 项目架构
 
 
+## 项目 wiki
+
+[WIKI](./wiki.md)
+
 ## 参与贡献
 
 请先仔细阅读[Contributing](./CONTRIBUTING.md)
